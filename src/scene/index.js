@@ -172,9 +172,10 @@ export async function initScene(container) {
     mesh.position.set(0, 0, 0)
 
     // Diagonal: top-left (M) → bottom-right (E), tightly spaced
-    const tx = (i - 3) * 1.1
-    const ty = (3 - i) * 0.55
-    const tz = 0
+    // M is closest (front), E is farthest (back)
+    const tx = (i - 3) * 1.1  + (Math.random() - 0.5) * 0.4
+    const ty = (3 - i) * 0.55 + (Math.random() - 0.5) * 0.3
+    const tz = (3 - i) * 1.2  // M: +3.6 (front), E: -3.6 (back)
 
     gsap.to(mesh.position, {
       x: tx, y: ty, z: tz,
