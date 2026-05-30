@@ -51,8 +51,8 @@ export default function UploadPanel({
   const textMuted     = isDark ? '#555'    : '#ccc'
   const dividerColor  = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)'
   const btnBg         = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'
-  const iconBg        = 'rgba(0,0,0,0.10)'
-  const iconColor     = '#000'
+  const iconBg        = isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)'
+  const iconColor     = isDark ? '#f0ede4' : '#000'
 
   const trackOff = isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)'
 
