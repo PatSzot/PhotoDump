@@ -82,18 +82,28 @@ export default function UploadPanel({
 
         <div style={{ ...s.dividerH, background: dividerColor }} />
 
-        <button style={s.mainBtn} onClick={() => onCornersChange(corners === 'rounded' ? 'sharp' : 'rounded')}>
+        <div style={s.mainBtn} onClick={() => onCornersChange(corners === 'rounded' ? 'sharp' : 'rounded')}
+          role="button" tabIndex={0}
+          onKeyDown={e => e.key === 'Enter' && onCornersChange(corners === 'rounded' ? 'sharp' : 'rounded')}
+        >
           <div style={{ ...s.iconWrap, background: iconBg, color: iconColor }}>
             <i className="ri-checkbox-blank-line" style={{ fontSize: 22 }} />
           </div>
           <div style={s.mainText}>
-            <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>Corners</span>
+            <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>Rounded Corners</span>
             <span style={{ ...s.mainSub, fontFamily: MONO, color: textSecondary }}>{corners === 'rounded' ? 'SLIGHTLY ROUNDED' : 'FULLY SQUARE'}</span>
           </div>
-          <div style={{ ...s.valuePill, fontFamily: MONO, background: btnBg, color: textSecondary }}>
-            {corners === 'rounded' ? 'ROUND' : 'SQUARE'}
+          <div style={{
+            ...s.toggleTrack,
+            background: corners === 'rounded' ? textPrimary : (isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)'),
+          }}>
+            <div style={{
+              ...s.toggleThumb,
+              transform: corners === 'rounded' ? 'translateX(18px)' : 'translateX(2px)',
+              background: corners === 'rounded' ? (isDark ? '#191812' : '#fff') : textSecondary,
+            }} />
           </div>
-        </button>
+        </div>
       </>)}
     </>
   )
@@ -269,6 +279,7 @@ const s = {
   pillDivider: { width: 1, height: 14, margin: '0 2px' },
   pillIconBtn: { display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 6px', borderRadius: 8 },
   editBtn:     { display: 'flex', alignItems: 'center', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 10, padding: '4px 8px', borderRadius: 8, letterSpacing: '0.08em', fontWeight: 500 },
-  themeOption: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px', borderRadius: 10, cursor: 'pointer', fontSize: 10, letterSpacing: '0.08em', fontWeight: 500 },
-  valuePill:   { fontSize: 9, letterSpacing: '0.08em', fontWeight: 500, padding: '4px 8px', borderRadius: 6, flexShrink: 0 },
+  themeOption:  { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px', borderRadius: 10, cursor: 'pointer', fontSize: 10, letterSpacing: '0.08em', fontWeight: 500 },
+  toggleTrack:  { width: 40, height: 24, borderRadius: 9, flexShrink: 0, position: 'relative', cursor: 'pointer', transition: 'background 0.2s' },
+  toggleThumb:  { position: 'absolute', top: 3, width: 18, height: 18, borderRadius: '50%', transition: 'transform 0.2s' },
 }
