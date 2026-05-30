@@ -3,7 +3,8 @@ import 'remixicon/fonts/remixicon.css'
 
 const MAX_PER_PICK = 100
 
-const MONO = '"IBM Plex Mono", monospace'
+const MONO     = '"IBM Plex Mono", monospace'
+const HEADLINE = '"Zalando Sans SemiExpanded", sans-serif'
 
 export default function UploadPanel({ onLoad, onDelete, images, progress }) {
   const inputRef  = useRef(null)
@@ -49,7 +50,7 @@ export default function UploadPanel({ onLoad, onDelete, images, progress }) {
               <div style={s.addMoreIcon}>
                 <i className="ri-add-line" style={{ fontSize: 17 }} />
               </div>
-              <span style={{ ...s.addMoreLabel, fontFamily: MONO }}>ADD MORE PHOTOS</span>
+              <span style={s.addMoreLabel}>Add More Photos</span>
               <i className="ri-arrow-right-s-line" style={{ fontSize: 18, color: '#ccc' }} />
             </button>
 
@@ -172,7 +173,7 @@ const s = {
   editCard: { ...glass, pointerEvents: 'auto', borderRadius: 20, overflow: 'hidden', display: 'flex', flexDirection: 'column' },
   addMoreRow: { display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', flexShrink: 0 },
   addMoreIcon: { width: 34, height: 34, borderRadius: 10, background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 },
-  addMoreLabel: { flex: 1, fontSize: 11, fontWeight: 500, color: '#000', letterSpacing: '0.08em' },
+  addMoreLabel: { flex: 1, fontSize: 15, fontWeight: 900, color: '#000', letterSpacing: '-0.01em', fontFamily: HEADLINE },
   listDivider: { height: 1, background: 'rgba(0,0,0,0.06)', flexShrink: 0 },
   list: { overflowY: 'auto', maxHeight: '52vh', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' },
   listItem: { display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', borderBottom: '1px solid rgba(0,0,0,0.04)' },
@@ -194,7 +195,7 @@ const s = {
   mainBtn: { display: 'flex', alignItems: 'center', gap: 14, width: '100%', padding: '18px 20px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' },
   iconWrap: { width: 42, height: 42, borderRadius: 12, background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 },
   mainText: { flex: 1, display: 'flex', flexDirection: 'column', gap: 3 },
-  mainLabel: { fontSize: 15, fontWeight: 600, color: '#000', letterSpacing: '-0.01em', fontFamily: 'inherit' },
+  mainLabel: { fontSize: 17, fontWeight: 900, color: '#000', letterSpacing: '-0.01em', fontFamily: HEADLINE },
   mainSub: { fontSize: 10, color: '#aaa', letterSpacing: '0.08em' },
   chevron: { fontSize: 20, color: '#ccc', flexShrink: 0 },
   dividerH: { height: 1, background: 'rgba(0,0,0,0.06)', margin: '0 20px' },
@@ -202,7 +203,7 @@ const s = {
 
   // ── Loaded pill ──
   pill: { ...glass, pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 8, borderRadius: 50, padding: '10px 12px 10px 14px', alignSelf: 'center' },
-  pillCount: { fontSize: 15, fontWeight: 700, color: '#000', letterSpacing: '-0.01em' },
+  pillCount: { fontSize: 16, fontWeight: 900, color: '#000', letterSpacing: '-0.01em', fontFamily: HEADLINE },
   pillLabel: { fontSize: 10, color: '#aaa', letterSpacing: '0.08em' },
   pillDivider: { width: 1, height: 14, background: 'rgba(0,0,0,0.1)', margin: '0 2px' },
   editBtn: { display: 'flex', alignItems: 'center', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 10, color: '#444', padding: '4px 8px', borderRadius: 8, letterSpacing: '0.08em', fontWeight: 500 },
