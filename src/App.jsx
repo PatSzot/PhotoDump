@@ -44,7 +44,6 @@ export default function App() {
   const [song,     setSong]     = useState(null)
   const [theme,    setTheme]    = useState('light')
   const [corners,  setCorners]  = useState('rounded')   // 'rounded' | 'sharp'
-  const [sharpness,setSharpness]= useState('sharp')     // 'sharp' | 'soft'
 
   useEffect(() => {
     let mounted = true
@@ -101,12 +100,12 @@ export default function App() {
 
   function handleCornersChange(v) {
     setCorners(v)
-    sceneRef.current?.setStyle({ corner: v === 'rounded' ? 0.12 : 0.0 })
-  }
-
-  function handleSharpnessChange(v) {
-    setSharpness(v)
-    sceneRef.current?.setStyle({ softEdge: v === 'soft' ? 1.0 : 0.0 })
+    sceneRef.current?.setStyle({ corner: v === 'rounded' ? 0.06 : 0.0 })
+    if (poolRef.current.length > 0) {
+      applyPool(poolRef.current, false)
+    } else {
+      sceneRef.current?.reloadDefaults()
+    }
   }
 
   function handleDelete(url) {
@@ -130,8 +129,6 @@ export default function App() {
         onThemeChange={handleThemeChange}
         corners={corners}
         onCornersChange={handleCornersChange}
-        sharpness={sharpness}
-        onSharpnessChange={handleSharpnessChange}
       />
     </>
   )

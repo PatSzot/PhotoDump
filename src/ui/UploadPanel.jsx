@@ -12,7 +12,6 @@ export default function UploadPanel({
   onLoadMusic, song, onRemoveMusic,
   theme, onThemeChange,
   corners, onCornersChange,
-  sharpness, onSharpnessChange,
 }) {
   const photoInputRef = useRef(null)
   const [isEditing,       setIsEditing]       = useState(false)
@@ -217,22 +216,6 @@ export default function UploadPanel({
                 </button>
               </div>
             )}
-
-            <div style={{ ...s.dividerH, background: dividerColor }} />
-
-            {/* ── Sharpness toggle ── */}
-            <button style={s.mainBtn} onClick={() => onSharpnessChange(sharpness === 'sharp' ? 'soft' : 'sharp')}>
-              <div style={{ ...s.iconWrap, background: iconBg, color: iconColor }}>
-                <i className="ri-contrast-line" style={{ fontSize: 22 }} />
-              </div>
-              <div style={s.mainText}>
-                <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>Sharpness</span>
-                <span style={{ ...s.mainSub, fontFamily: MONO, color: textSecondary }}>{sharpness === 'sharp' ? 'SHARP EDGES' : 'SOFT EDGES'}</span>
-              </div>
-              <div style={{ ...s.valuePill, fontFamily: MONO, background: btnBg, color: textSecondary }}>
-                {sharpness === 'sharp' ? 'SHARP' : 'SOFT'}
-              </div>
-            </button>
 
             <div style={{ ...s.dividerH, background: dividerColor }} />
 

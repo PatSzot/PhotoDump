@@ -27,25 +27,10 @@ const VERT = /* glsl */`
 const FRAG = /* glsl */`
   uniform sampler2D uTexture;
   uniform float uOpacity;
-  uniform float uCorner;    // 0.0 = sharp, 0.12 = rounded
-  uniform float uSoftEdge;  // 0.0 = hard edge, 1.0 = soft feathered edge
   varying vec2 vUv;
-
   void main() {
     vec4 color = texture2D(uTexture, vUv);
-
-    // Rounded corner SDF
-    vec2 p = vUv * 2.0 - 1.0;
-    vec2 q = abs(p) - 1.0 + uCorner;
-    float d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - uCorner;
-    float cornerMask = 1.0 - smoothstep(-0.02, 0.02, d);
-
-    // Soft edge vignette
-    vec2 edgeDist = min(vUv, 1.0 - vUv);
-    float softMask = smoothstep(0.0, 0.15, min(edgeDist.x, edgeDist.y));
-    float edgeMask = mix(1.0, softMask, uSoftEdge);
-
-    gl_FragColor = vec4(color.rgb, color.a * uOpacity * cornerMask * edgeMask);
+    gl_FragColor = vec4(color.rgb, color.a * uOpacity);
   }
 `
 
@@ -54,9 +39,27 @@ const FRAG = /* glsl */`
 const LETTERS = ['/M.jpg', '/Y.jpg', '/S.jpg', '/C.jpg', '/A.jpg', '/P.jpg', '/E.jpg']
 const PARTICLE_COUNT = 7
 
-// ─── SVG loader ───────────────────────────────────────────────────────────────
+// ─── CSS-style corner clip ────────────────────────────────────────────────────
 
-function loadSvg(url) {
+function clipRoundRect(ctx, w, h, r) {
+  if (r <= 0) return
+  ctx.beginPath()
+  ctx.moveTo(r, 0)
+  ctx.lineTo(w - r, 0)
+  ctx.arcTo(w, 0,   w, r,   r)
+  ctx.lineTo(w, h - r)
+  ctx.arcTo(w, h,   w - r, h, r)
+  ctx.lineTo(r, h)
+  ctx.arcTo(0, h,   0, h - r, r)
+  ctx.lineTo(0, r)
+  ctx.arcTo(0, 0,   r, 0,   r)
+  ctx.closePath()
+  ctx.clip()
+}
+
+// ─── Asset loader (SVG / JPEG) ────────────────────────────────────────────────
+
+function loadSvg(url, corner = 0) {
   return new Promise(resolve => {
     const img = new Image()
     img.onload = () => {
@@ -65,7 +68,9 @@ function loadSvg(url) {
       const canvas = document.createElement('canvas')
       canvas.width  = w
       canvas.height = h
-      canvas.getContext('2d').drawImage(img, 0, 0)
+      const ctx = canvas.getContext('2d')
+      clipRoundRect(ctx, w, h, Math.round(Math.min(w, h) * corner))
+      ctx.drawImage(img, 0, 0)
       const tex = new THREE.CanvasTexture(canvas)
       tex.colorSpace = THREE.SRGBColorSpace
       resolve({ tex, aspect: w / h })
@@ -106,7 +111,7 @@ function drawMeta(ctx, w, h, { date, location } = {}) {
 
 // ─── Photo texture loader (canvas-based — safe for blob URLs on iOS) ──────────
 
-async function loadAsTexture(url, meta = {}) {
+async function loadAsTexture(url, meta = {}, corner = 0) {
   await document.fonts.ready
   return new Promise(resolve => {
     const img = new Image()
@@ -120,6 +125,7 @@ async function loadAsTexture(url, meta = {}) {
       canvas.width  = w
       canvas.height = h
       const ctx = canvas.getContext('2d')
+      clipRoundRect(ctx, w, h, Math.round(Math.min(w, h) * corner))
       ctx.drawImage(img, 0, 0, w, h)
       drawMeta(ctx, w, h, meta)
 
@@ -157,11 +163,12 @@ export async function initScene(container) {
   controls.zoomSpeed       = 0.8
   controls.autoRotate      = false
 
-  // ─── Style state (updated via setStyle) ──────────────────────────────────
-  const style = { corner: 0.12, softEdge: 0.0 }
+  // ─── Style state ─────────────────────────────────────────────────────────
+  // corner: proportion of shorter side used as border-radius in canvas (0 = none)
+  const style = { corner: 0.06 }
 
   // ─── Load MYSCAPE assets in order ────────────────────────────────────────
-  const assets = await Promise.all(LETTERS.map(loadSvg))
+  const assets = await Promise.all(LETTERS.map(url => loadSvg(url, style.corner)))
 
   // ─── Build particle cloud ─────────────────────────────────────────────────
   const geo       = new THREE.PlaneGeometry(1, 1)
@@ -177,12 +184,10 @@ export async function initScene(container) {
     const mat = new THREE.ShaderMaterial({
       vertexShader: VERT, fragmentShader: FRAG,
       uniforms: {
-        uTexture:  { value: tex },
-        uSizeX:    { value: aspect >= 1 ? base : base * aspect },
-        uSizeY:    { value: aspect >= 1 ? base / aspect : base },
-        uOpacity:  { value: 1.0 },
-        uCorner:   { value: style.corner },
-        uSoftEdge: { value: style.softEdge },
+        uTexture: { value: tex },
+        uSizeX:   { value: aspect >= 1 ? base : base * aspect },
+        uSizeY:   { value: aspect >= 1 ? base / aspect : base },
+        uOpacity: { value: 1.0 },
       },
       transparent: true, depthWrite: false, side: THREE.DoubleSide,
     })
@@ -238,12 +243,10 @@ export async function initScene(container) {
     const mat = new THREE.ShaderMaterial({
       vertexShader: VERT, fragmentShader: FRAG,
       uniforms: {
-        uTexture:  { value: placeholder?.tex ?? assets[0].tex },
-        uSizeX:    { value: base },
-        uSizeY:    { value: base },
-        uOpacity:  { value: 0 },
-        uCorner:   { value: style.corner },
-        uSoftEdge: { value: style.softEdge },
+        uTexture: { value: placeholder?.tex ?? assets[0].tex },
+        uSizeX:   { value: base },
+        uSizeY:   { value: base },
+        uOpacity: { value: 0 },
       },
       transparent: true, depthWrite: false, side: THREE.DoubleSide,
     })
@@ -287,7 +290,7 @@ export async function initScene(container) {
       gsap.to(mesh.material.uniforms.uOpacity, {
         value: 0, duration: 0.18, delay,
         onComplete() {
-          loadAsTexture(url, meta).then(result => {
+          loadAsTexture(url, meta, style.corner).then(result => {
             if (result) {
               const { tex, aspect } = result
               mesh.material.uniforms.uTexture.value = tex
@@ -329,13 +332,19 @@ export async function initScene(container) {
   return {
     updateTextures,
     setBackground(hex) { renderer.setClearColor(hex, 1) },
-    setStyle({ corner, softEdge }) {
-      if (corner   !== undefined) style.corner   = corner
-      if (softEdge !== undefined) style.softEdge = softEdge
-      for (const mesh of particles) {
-        if (corner   !== undefined) mesh.material.uniforms.uCorner.value   = corner
-        if (softEdge !== undefined) mesh.material.uniforms.uSoftEdge.value = softEdge
-      }
+    setStyle({ corner }) {
+      if (corner !== undefined) style.corner = corner
+    },
+    async reloadDefaults() {
+      const fresh = await Promise.all(LETTERS.map(url => loadSvg(url, style.corner)))
+      fresh.forEach((asset, i) => {
+        if (!asset || i >= particles.length) return
+        const mesh = particles[i]
+        mesh.material.uniforms.uTexture.value = asset.tex
+        const base = mesh.userData.baseSize
+        mesh.material.uniforms.uSizeX.value = asset.aspect >= 1 ? base : base * asset.aspect
+        mesh.material.uniforms.uSizeY.value = asset.aspect >= 1 ? base / asset.aspect : base
+      })
     },
     cleanup() {
       cancelAnimationFrame(rafId)
