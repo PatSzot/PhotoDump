@@ -131,7 +131,7 @@ export async function initScene(container) {
 
   const scene  = new THREE.Scene()
   const camera = new THREE.PerspectiveCamera(55, W / H, 0.1, 120)
-  camera.position.set(0, 0, 18)
+  camera.position.set(0, 0, 8)
 
   const controls = new OrbitControls(camera, renderer.domElement)
   controls.enableDamping   = true
