@@ -31,7 +31,15 @@ export default function UploadPanel({ onLoad, count, loading }) {
         accept="image/*"
         multiple
         onChange={handleChange}
-        style={{ display: 'none' }}
+        style={{
+          position: 'fixed',
+          top: '-200px',
+          left: '-200px',
+          opacity: 0,
+          width: '1px',
+          height: '1px',
+          pointerEvents: 'none',
+        }}
       />
 
       <div style={s.root}>

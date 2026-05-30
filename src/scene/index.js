@@ -130,13 +130,33 @@ export function initScene(container) {
     particles.push(mesh)
   }
 
-  // ─── Update textures from Instagram ─────────────────────────────────────────
+  // ─── Texture loading (canvas-based to avoid iOS crossOrigin/blob issues) ────
 
-  function updateTextures(proxyUrls) {
-    const loader = new THREE.TextureLoader()
+  function loadBlobAsTexture(url) {
+    return new Promise(resolve => {
+      const img = new Image()
+      // Do NOT set crossOrigin — blob URLs break on iOS Safari with it set
+      img.onload = () => {
+        const MAX = 1024
+        const scale = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight))
+        const w = Math.max(1, Math.round(img.naturalWidth * scale))
+        const h = Math.max(1, Math.round(img.naturalHeight * scale))
+        const canvas = document.createElement('canvas')
+        canvas.width = w
+        canvas.height = h
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+        const tex = new THREE.CanvasTexture(canvas)
+        tex.colorSpace = THREE.SRGBColorSpace
+        resolve(tex)
+      }
+      img.onerror = () => resolve(null)
+      img.src = url
+    })
+  }
 
+  function updateTextures(urls) {
     particles.forEach((mesh, i) => {
-      const url = proxyUrls[i % proxyUrls.length]
+      const url = urls[i % urls.length]
       const delay = i * 0.015 + Math.random() * 0.15
 
       gsap.to(mesh.material.uniforms.uOpacity, {
@@ -144,19 +164,10 @@ export function initScene(container) {
         duration: 0.2,
         delay,
         onComplete() {
-          loader.load(
-            url,
-            tex => {
-              tex.colorSpace = THREE.SRGBColorSpace
-              mesh.material.uniforms.uTexture.value = tex
-              gsap.to(mesh.material.uniforms.uOpacity, { value: 1, duration: 0.35 })
-            },
-            undefined,
-            () => {
-              // on error, fade back in with existing texture
-              gsap.to(mesh.material.uniforms.uOpacity, { value: 1, duration: 0.35 })
-            }
-          )
+          loadBlobAsTexture(url).then(tex => {
+            if (tex) mesh.material.uniforms.uTexture.value = tex
+            gsap.to(mesh.material.uniforms.uOpacity, { value: 1, duration: 0.35 })
+          })
         },
       })
     })
