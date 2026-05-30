@@ -1,7 +1,6 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import gsap from 'gsap'
-import { createTexturePool } from './texturePool.js'
 
 // ─── Shaders ──────────────────────────────────────────────────────────────────
 
@@ -17,7 +16,7 @@ const VERT = /* glsl */`
     vec3 up    = normalize(vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]));
     vec4 viewCenter = viewMatrix * vec4(worldCenter, 1.0);
     float dist  = max(0.5, -viewCenter.z);
-    float scale = clamp(6.0 / dist, 0.12, 3.0);
+    float scale = clamp(7.0 / dist, 0.15, 3.5);
     vec3 finalPos = worldCenter
       + right * position.x * scale * uSizeX
       + up    * position.y * scale * uSizeY;
@@ -31,31 +30,55 @@ const FRAG = /* glsl */`
   varying vec2 vUv;
   void main() {
     vec4 color = texture2D(uTexture, vUv);
-    gl_FragColor = vec4(color.rgb, uOpacity);
+    gl_FragColor = vec4(color.rgb, color.a * uOpacity);
   }
 `
 
-// ─── Meta overlay ─────────────────────────────────────────────────────────────
+// ─── Asset order ──────────────────────────────────────────────────────────────
+
+const LETTERS = ['/M.svg', '/Y.svg', '/S.svg', '/C.svg', '/A.svg', '/P.svg', '/E.svg']
+const PARTICLE_COUNT = 70   // 7 × 10
+
+// ─── SVG loader ───────────────────────────────────────────────────────────────
+
+function loadSvg(url) {
+  return new Promise(resolve => {
+    const img = new Image()
+    img.onload = () => {
+      const w = img.naturalWidth  || 99
+      const h = img.naturalHeight || 78
+      const canvas = document.createElement('canvas')
+      canvas.width  = w
+      canvas.height = h
+      canvas.getContext('2d').drawImage(img, 0, 0)
+      const tex = new THREE.CanvasTexture(canvas)
+      tex.colorSpace = THREE.SRGBColorSpace
+      resolve({ tex, aspect: w / h })
+    }
+    img.onerror = () => resolve(null)
+    img.src = url
+  })
+}
+
+// ─── Meta overlay (for user photos) ──────────────────────────────────────────
 
 function drawMeta(ctx, w, h, { date, location } = {}) {
   const lines = [location, date].filter(Boolean)
   if (!lines.length) return
 
-  const fs   = Math.max(9,  Math.round(w * 0.031))
-  const pad  = Math.round(w * 0.048)
+  const fs    = Math.max(9,  Math.round(w * 0.031))
+  const pad   = Math.round(w * 0.048)
   const lineH = Math.round(fs * 1.65)
   const zone  = pad + lines.length * lineH
 
-  // Gradient scrim
   const grad = ctx.createLinearGradient(0, h - zone * 2.2, 0, h)
   grad.addColorStop(0, 'rgba(0,0,0,0)')
   grad.addColorStop(1, 'rgba(0,0,0,0.62)')
   ctx.fillStyle = grad
   ctx.fillRect(0, h - zone * 2.2, w, zone * 2.2)
 
-  // Text — IBM Plex Mono, all caps
-  ctx.font      = `500 ${fs}px "IBM Plex Mono", monospace`
-  ctx.fillStyle = 'rgba(255,255,255,0.93)'
+  ctx.font         = `500 ${fs}px "IBM Plex Mono", monospace`
+  ctx.fillStyle    = 'rgba(255,255,255,0.93)'
   ctx.textAlign    = 'left'
   ctx.textBaseline = 'bottom'
   ctx.letterSpacing = '0.04em'
@@ -66,12 +89,10 @@ function drawMeta(ctx, w, h, { date, location } = {}) {
   })
 }
 
-// ─── Texture loader (canvas-based — safe for blob URLs on iOS) ────────────────
+// ─── Photo texture loader (canvas-based — safe for blob URLs on iOS) ──────────
 
 async function loadAsTexture(url, meta = {}) {
-  // Ensure fonts are ready before drawing text
   await document.fonts.ready
-
   return new Promise(resolve => {
     const img = new Image()
     img.onload = () => {
@@ -84,7 +105,6 @@ async function loadAsTexture(url, meta = {}) {
       canvas.width  = w
       canvas.height = h
       const ctx = canvas.getContext('2d')
-
       ctx.drawImage(img, 0, 0, w, h)
       drawMeta(ctx, w, h, meta)
 
@@ -99,7 +119,7 @@ async function loadAsTexture(url, meta = {}) {
 
 // ─── Scene ────────────────────────────────────────────────────────────────────
 
-export function initScene(container) {
+export async function initScene(container) {
   const W = window.innerWidth
   const H = window.innerHeight
 
@@ -111,31 +131,40 @@ export function initScene(container) {
 
   const scene  = new THREE.Scene()
   const camera = new THREE.PerspectiveCamera(55, W / H, 0.1, 120)
-  camera.position.set(0, 0, 20)
+  camera.position.set(0, 0, 18)
 
   const controls = new OrbitControls(camera, renderer.domElement)
-  controls.enableDamping  = true
-  controls.dampingFactor  = 0.06
-  controls.minDistance    = 4
-  controls.maxDistance    = 50
-  controls.rotateSpeed    = 0.6
-  controls.zoomSpeed      = 0.8
+  controls.enableDamping   = true
+  controls.dampingFactor   = 0.06
+  controls.minDistance     = 4
+  controls.maxDistance     = 40
+  controls.rotateSpeed     = 0.6
+  controls.zoomSpeed       = 0.8
+  controls.autoRotate      = true
+  controls.autoRotateSpeed = 0.5
 
-  const pool     = createTexturePool()
-  const animated = pool.filter(e => e.animated)
-  const geo      = new THREE.PlaneGeometry(1, 1)
+  controls.addEventListener('start', () => { controls.autoRotate = false })
+
+  // ─── Load MYSCAPE assets in order ────────────────────────────────────────
+  const assets = await Promise.all(LETTERS.map(loadSvg))
+
+  // ─── Build particle cloud ─────────────────────────────────────────────────
+  const geo       = new THREE.PlaneGeometry(1, 1)
   const particles = []
 
-  for (let i = 0; i < 100; i++) {
-    const entry = pool[Math.floor(Math.random() * pool.length)]
-    const base  = 0.9 + Math.random() * 1.3
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    const asset = assets[i % LETTERS.length]
+    if (!asset) continue
+
+    const { tex, aspect } = asset
+    const base = 1.8 + Math.random() * 1.0   // larger for legibility
 
     const mat = new THREE.ShaderMaterial({
       vertexShader: VERT, fragmentShader: FRAG,
       uniforms: {
-        uTexture: { value: entry.tex },
-        uSizeX:   { value: base },
-        uSizeY:   { value: base },
+        uTexture: { value: tex },
+        uSizeX:   { value: aspect >= 1 ? base : base * aspect },
+        uSizeY:   { value: aspect >= 1 ? base / aspect : base },
         uOpacity: { value: 1.0 },
       },
       transparent: true, depthWrite: false, side: THREE.DoubleSide,
@@ -143,25 +172,30 @@ export function initScene(container) {
 
     const mesh = new THREE.Mesh(geo, mat)
     mesh.userData.baseSize = base
+    mesh.position.set(0, 0, 0)
 
-    const r  = 14
+    const r  = 8
     const tx = (Math.random() - 0.5) * r * 2
-    const ty = (Math.random() - 0.5) * r * 1.2
+    const ty = (Math.random() - 0.5) * r * 0.9
     const tz = (Math.random() - 0.5) * r * 2
 
-    mesh.position.set(0, 0, 0)
+    // Sequential by letter: M → Y → S → C → A → P → E bloom out in order
+    const letterIdx = i % LETTERS.length
+    const groupIdx  = Math.floor(i / LETTERS.length)
+    const delay     = letterIdx * 0.13 + groupIdx * 0.025
+
     gsap.to(mesh.position, {
       x: tx, y: ty, z: tz,
-      duration: 1.8 + Math.random() * 1.4,
-      delay: Math.random() * 0.6,
+      duration: 1.6 + Math.random() * 1.2,
+      delay,
       ease: 'expo.out',
       onComplete() {
         gsap.to(mesh.position, {
-          x: tx + (Math.random() - 0.5) * 0.6,
-          y: ty + (Math.random() - 0.5) * 0.6,
+          x: tx + (Math.random() - 0.5) * 0.5,
+          y: ty + (Math.random() - 0.5) * 0.5,
           duration: 3 + Math.random() * 4,
           ease: 'sine.inOut', yoyo: true, repeat: -1,
-          delay: Math.random() * 3,
+          delay: Math.random() * 2,
         })
       },
     })
@@ -170,7 +204,7 @@ export function initScene(container) {
     particles.push(mesh)
   }
 
-  // ─── updateTextures({ url, meta }[]) ────────────────────────────────────────
+  // ─── updateTextures — called when user loads photos ───────────────────────
 
   function updateTextures(images, onProgress) {
     const total = particles.length
@@ -199,7 +233,7 @@ export function initScene(container) {
     })
   }
 
-  // ─── Resize / loop ────────────────────────────────────────────────────────
+  // ─── Resize / render loop ─────────────────────────────────────────────────
 
   function onResize() {
     const w = window.innerWidth, h = window.innerHeight
@@ -210,11 +244,8 @@ export function initScene(container) {
   window.addEventListener('resize', onResize)
 
   let rafId
-  const clock = new THREE.Clock()
   function animate() {
     rafId = requestAnimationFrame(animate)
-    const t = clock.getElapsedTime()
-    for (const e of animated) e.update(t)
     controls.update()
     renderer.render(scene, camera)
   }

@@ -44,9 +44,15 @@ export default function App() {
   const [song,     setSong]     = useState(null)
 
   useEffect(() => {
-    const scene = initScene(containerRef.current)
-    sceneRef.current = scene
-    return scene.cleanup
+    let mounted = true
+    initScene(containerRef.current).then(scene => {
+      if (!mounted) { scene.cleanup(); return }
+      sceneRef.current = scene
+    })
+    return () => {
+      mounted = false
+      sceneRef.current?.cleanup()
+    }
   }, [])
 
   function applyPool(next, showProgress = true) {
