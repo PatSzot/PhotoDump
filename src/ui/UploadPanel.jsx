@@ -11,12 +11,14 @@ export default function UploadPanel({
   corners, onCornersChange,
   onRecord, isRecording, recordProgress,
   recordedVideo, onSaveVideo,
+  onCopyLink,
 }) {
   const photoInputRef = useRef(null)
   const [isEditing,    setIsEditing]    = useState(false)
   const [showTheme,    setShowTheme]    = useState(false)
   const [showAnimate,  setShowAnimate]  = useState(false)
   const [copied,       setCopied]       = useState(false)
+  const [copying,      setCopying]      = useState(false)
   const count     = images.length
   const isLoading = progress !== null
   const isDark    = theme === 'dark'
@@ -201,10 +203,18 @@ export default function UploadPanel({
                 <div style={{ ...s.dividerH, background: dividerColor }} />
 
                 {/* Copy shareable link */}
-                <button style={s.mainBtn} onClick={() => {
-                  navigator.clipboard.writeText(`${window.location.origin}/?view=1`)
-                  setCopied(true)
-                  setTimeout(() => setCopied(false), 2000)
+                <button style={{ ...s.mainBtn, opacity: copying ? 0.6 : 1 }} onClick={async () => {
+                  if (copying || copied) return
+                  setCopying(true)
+                  try {
+                    await onCopyLink()
+                    setCopied(true)
+                    setTimeout(() => setCopied(false), 3000)
+                  } catch (err) {
+                    console.error('Copy link failed:', err)
+                  } finally {
+                    setCopying(false)
+                  }
                 }}>
                   <div style={{ ...s.iconWrap, background: iconBg, color: iconColor }}>
                     <i className={copied ? 'ri-check-line' : 'ri-link'} style={{ fontSize: 22 }} />
@@ -212,10 +222,10 @@ export default function UploadPanel({
                   <div style={s.mainText}>
                     <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>Copy Link</span>
                     <span style={{ ...s.mainSub, fontFamily: MONO, color: copied ? textPrimary : textSecondary }}>
-                      {copied ? 'COPIED!' : 'SHARE WITHOUT CONTROLS'}
+                      {copying ? 'UPLOADING PHOTOS…' : copied ? 'COPIED!' : 'SHARE WITH YOUR PHOTOS'}
                     </span>
                   </div>
-                  <i className="ri-arrow-right-s-line" style={{ ...s.chevron, color: textMuted }} />
+                  {!copying && <i className="ri-arrow-right-s-line" style={{ ...s.chevron, color: textMuted }} />}
                 </button>
 
                 <div style={{ ...s.dividerH, background: dividerColor }} />

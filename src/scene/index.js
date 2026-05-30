@@ -115,6 +115,7 @@ async function loadAsTexture(url, meta = {}, corner = 0) {
   await document.fonts.ready
   return new Promise(resolve => {
     const img = new Image()
+    img.crossOrigin = 'anonymous'
     img.onload = () => {
       const MAX   = 1024
       const scale = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight, 1))

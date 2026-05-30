@@ -32,9 +32,22 @@ async function readMeta(file) {
   }
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = reject
+    reader.readAsDataURL(blob)
+  })
+}
+
 // ─── App ──────────────────────────────────────────────────────────────────────
 
-const VIEW_MODE = new URLSearchParams(window.location.search).has('view')
+const _params    = new URLSearchParams(window.location.search)
+const SHARE_PARAM = _params.get('share')
+const VIEW_MODE   = _params.has('view') || !!SHARE_PARAM
 
 export default function App() {
   const containerRef = useRef(null)
@@ -50,9 +63,27 @@ export default function App() {
 
   useEffect(() => {
     let mounted = true
-    initScene(containerRef.current).then(scene => {
+    initScene(containerRef.current).then(async scene => {
       if (!mounted) { scene.cleanup(); return }
       sceneRef.current = scene
+
+      if (SHARE_PARAM) {
+        try {
+          const res = await fetch(decodeURIComponent(SHARE_PARAM))
+          const manifest = await res.json()
+          if (mounted && Array.isArray(manifest) && manifest.length > 0) {
+            poolRef.current = manifest
+            setImages([...manifest])
+            setProgress({ done: 0, total: manifest.length })
+            scene.updateTextures(manifest, (done, total) => {
+              setProgress({ done, total })
+              if (done === total) setTimeout(() => setProgress(null), 800)
+            })
+          }
+        } catch (err) {
+          console.error('Failed to load shared scape:', err)
+        }
+      }
     })
     return () => {
       mounted = false
@@ -136,6 +167,33 @@ export default function App() {
     setRecordedVideo(null)
   }
 
+  async function handleCopyLink() {
+    if (!poolRef.current.length) {
+      await navigator.clipboard.writeText(`${window.location.origin}/?view`)
+      return
+    }
+
+    const entries = await Promise.all(poolRef.current.map(async ({ url, meta }) => {
+      const res  = await fetch(url)
+      const blob = await res.blob()
+      const dataUrl = await blobToDataUrl(blob)
+      return { dataUrl, meta }
+    }))
+
+    const res = await fetch('/api/share', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entries }),
+    })
+
+    if (!res.ok) throw new Error('Upload failed')
+
+    const { manifestUrl } = await res.json()
+    await navigator.clipboard.writeText(
+      `${window.location.origin}/?view&share=${encodeURIComponent(manifestUrl)}`
+    )
+  }
+
   function handleCornersChange(v) {
     setCorners(v)
     sceneRef.current?.setStyle({ corner: v === 'rounded' ? 0.12 : 0.0 })
@@ -169,6 +227,7 @@ export default function App() {
         recordProgress={recordProgress}
         recordedVideo={recordedVideo}
         onSaveVideo={handleSaveVideo}
+        onCopyLink={handleCopyLink}
       />}
     </>
   )
