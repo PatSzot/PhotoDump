@@ -57,7 +57,7 @@ export default function UploadPanel({
         </div>
         <div style={s.mainText}>
           <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>Theme</span>
-          <span style={{ ...s.mainSub, fontFamily: MONO, color: textSecondary }}>{isDark ? 'DARK MODE' : 'LIGHT MODE'}</span>
+          <span style={{ ...s.mainSub, fontFamily: MONO, color: textSecondary }}>{isDark ? 'DARK' : 'LIGHT'} THEME, {corners === 'rounded' ? 'ROUNDED' : 'SQUARE'} CORNERS</span>
         </div>
         <i className={showTheme ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'} style={{ ...s.chevron, color: textMuted }} />
       </button>
@@ -183,13 +183,6 @@ export default function UploadPanel({
                     <span style={{ ...s.mainSub, fontFamily: MONO, color: textSecondary }}>UP TO {MAX_PER_PICK} PHOTOS</span>
                   </div>
                   <i className="ri-arrow-right-s-line" style={{ ...s.chevron, color: textMuted }} />
-                </button>
-
-                <div style={{ ...s.dividerH, background: dividerColor }} />
-
-                <button style={{ ...s.secondaryRow, fontFamily: MONO, color: textSecondary }} onClick={openPhotoPicker}>
-                  <i className="ri-flashlight-line" style={{ marginRight: 8, fontSize: 14 }} />
-                  AUTO-FILL — SELECT ALL &amp; WE'LL USE THE FIRST {MAX_PER_PICK}
                 </button>
 
                 <div style={{ ...s.dividerH, background: dividerColor }} />
