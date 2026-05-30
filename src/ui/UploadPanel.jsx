@@ -56,7 +56,7 @@ export default function UploadPanel({
           <i className={isDark ? 'ri-moon-line' : 'ri-sun-line'} style={{ fontSize: 22 }} />
         </div>
         <div style={s.mainText}>
-          <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>Theme</span>
+          <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>Customize</span>
           <span style={{ ...s.mainSub, fontFamily: MONO, color: textSecondary }}>{isDark ? 'DARK' : 'LIGHT'} THEME, {corners === 'rounded' ? 'ROUNDED' : 'SQUARE'} CORNERS</span>
         </div>
         <i className={showTheme ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'} style={{ ...s.chevron, color: textMuted }} />
@@ -179,8 +179,21 @@ export default function UploadPanel({
                     <i className="ri-image-2-line" style={{ fontSize: 22 }} />
                   </div>
                   <div style={s.mainText}>
-                    <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>Select from Camera Roll</span>
+                    <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>Upload Images</span>
                     <span style={{ ...s.mainSub, fontFamily: MONO, color: textSecondary }}>UP TO {MAX_PER_PICK} PHOTOS</span>
+                  </div>
+                  <i className="ri-arrow-right-s-line" style={{ ...s.chevron, color: textMuted }} />
+                </button>
+
+                <div style={{ ...s.dividerH, background: dividerColor }} />
+
+                <button style={s.mainBtn}>
+                  <div style={{ ...s.iconWrap, background: iconBg, color: iconColor }}>
+                    <i className="ri-share-line" style={{ fontSize: 22 }} />
+                  </div>
+                  <div style={s.mainText}>
+                    <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>Animate and Share</span>
+                    <span style={{ ...s.mainSub, fontFamily: MONO, color: textSecondary }}>COMING SOON</span>
                   </div>
                   <i className="ri-arrow-right-s-line" style={{ ...s.chevron, color: textMuted }} />
                 </button>
