@@ -12,7 +12,7 @@ async function getToken() {
       Authorization:
         'Basic ' +
         Buffer.from(
-          `${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`
+          `${process.env.Spotify_Client_ID}:${process.env.Spotify_Secret}`
         ).toString('base64'),
     },
     body: 'grant_type=client_credentials',
