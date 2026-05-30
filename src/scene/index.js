@@ -171,11 +171,20 @@ export async function initScene(container) {
     mesh.userData.baseSize = base
     mesh.position.set(0, 0, 0)
 
-    // Diagonal: top-left (M) → bottom-right (E), tightly spaced
+    // Positions match the MYSCAPE logo layout (M, Y, S, C, A, P, E order)
     // M is closest (front), E is farthest (back)
-    const tx = (i - 3) * 1.1  + (Math.random() - 0.5) * 0.4
-    const ty = (3 - i) * 0.55 + (Math.random() - 0.5) * 0.3
-    const tz = (3 - i) * 1.2  // M: +3.6 (front), E: -3.6 (back)
+    const POSITIONS = [
+      [-1.9,  0.5],  // M — left middle
+      [-0.5,  0.1],  // Y — just left of center
+      [ 0.0,  2.4],  // S — top center
+      [ 1.0,  1.1],  // C — upper right
+      [ 1.8,  0.1],  // A — right middle
+      [ 1.1, -0.9],  // P — lower right
+      [ 0.0, -2.5],  // E — bottom center
+    ]
+    const tx = POSITIONS[i][0]
+    const ty = POSITIONS[i][1]
+    const tz = (3 - i) * 1.0  // M: +3, Y: +2, ... E: -3
 
     gsap.to(mesh.position, {
       x: tx, y: ty, z: tz,
