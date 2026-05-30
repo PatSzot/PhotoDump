@@ -60,7 +60,7 @@ export default function App() {
     setImages([...next])
 
     if (showProgress) {
-      setProgress({ done: 0, total: 100 })
+      setProgress({ done: 0, total: next.length })
       sceneRef.current.updateTextures(next, (done, total) => {
         setProgress({ done, total })
         if (done === total) setTimeout(() => setProgress(null), 800)

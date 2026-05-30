@@ -205,14 +205,61 @@ export async function initScene(container) {
     particles.push(mesh)
   }
 
-  // ─── updateTextures — called when user loads photos ───────────────────────
+  // ─── Spawn a new particle at a random position ───────────────────────────
+
+  function spawnParticle() {
+    const r    = 8
+    const tx   = (Math.random() - 0.5) * r * 2
+    const ty   = (Math.random() - 0.5) * r
+    const tz   = (Math.random() - 0.5) * r * 1.5
+    const base = 2.0 + Math.random() * 0.4
+    const placeholder = assets[Math.floor(Math.random() * assets.length)]
+
+    const mat = new THREE.ShaderMaterial({
+      vertexShader: VERT, fragmentShader: FRAG,
+      uniforms: {
+        uTexture: { value: placeholder?.tex ?? assets[0].tex },
+        uSizeX:   { value: base },
+        uSizeY:   { value: base },
+        uOpacity: { value: 0 },
+      },
+      transparent: true, depthWrite: false, side: THREE.DoubleSide,
+    })
+
+    const mesh = new THREE.Mesh(geo, mat)
+    mesh.userData.baseSize = base
+    mesh.position.set(0, 0, 0)
+
+    gsap.to(mesh.position, {
+      x: tx, y: ty, z: tz,
+      duration: 1.4, ease: 'expo.out',
+      onComplete() {
+        gsap.to(mesh.position, {
+          y: ty + 0.08,
+          duration: 2.5 + Math.random() * 2,
+          ease: 'sine.inOut', yoyo: true, repeat: -1,
+          delay: Math.random() * 1.5,
+        })
+      },
+    })
+
+    scene.add(mesh)
+    particles.push(mesh)
+    return mesh
+  }
+
+  // ─── updateTextures — one container per image, no repeats ────────────────
 
   function updateTextures(images, onProgress) {
-    const total = particles.length
+    // Grow the scape to fit all images
+    while (particles.length < images.length) spawnParticle()
+
+    const total = images.length
     let done = 0
 
-    particles.forEach((mesh, i) => {
-      const { url, meta = {} } = images[i % images.length]
+    // Assign each image to its own particle
+    images.forEach(({ url, meta = {} }, i) => {
+      const mesh  = particles[i]
       const delay = i * 0.015 + Math.random() * 0.1
 
       gsap.to(mesh.material.uniforms.uOpacity, {
@@ -232,6 +279,11 @@ export async function initScene(container) {
         },
       })
     })
+
+    // Hide any particles beyond the current image count
+    for (let i = images.length; i < particles.length; i++) {
+      gsap.to(particles[i].material.uniforms.uOpacity, { value: 0, duration: 0.3 })
+    }
   }
 
   // ─── Resize / render loop ─────────────────────────────────────────────────
