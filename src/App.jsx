@@ -100,7 +100,7 @@ export default function App() {
 
   function handleCornersChange(v) {
     setCorners(v)
-    sceneRef.current?.setStyle({ corner: v === 'rounded' ? 0.06 : 0.0 })
+    sceneRef.current?.setStyle({ corner: v === 'rounded' ? 0.12 : 0.0 })
     if (poolRef.current.length > 0) {
       applyPool(poolRef.current, false)
     } else {
