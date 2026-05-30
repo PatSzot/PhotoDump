@@ -174,13 +174,13 @@ export async function initScene(container) {
     // Positions match the MYSCAPE logo layout (M, Y, S, C, A, P, E order)
     // M is closest (front), E is farthest (back)
     const POSITIONS = [
-      [-1.9,  0.5],  // M — left middle
-      [-0.5,  0.1],  // Y — just left of center
-      [ 0.0,  2.4],  // S — top center
-      [ 1.0,  1.1],  // C — upper right
-      [ 1.8,  0.1],  // A — right middle
-      [ 1.1, -0.9],  // P — lower right
-      [ 0.0, -2.5],  // E — bottom center
+      [-1.1,  0.3],  // M — left middle
+      [-0.3,  0.05], // Y — just left of center
+      [ 0.0,  1.4],  // S — top center
+      [ 0.6,  0.65], // C — upper right
+      [ 1.05, 0.05], // A — right middle
+      [ 0.65,-0.55], // P — lower right
+      [ 0.0, -1.5],  // E — bottom center
     ]
     const tx = POSITIONS[i][0]
     const ty = POSITIONS[i][1]
