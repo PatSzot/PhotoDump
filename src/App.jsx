@@ -57,6 +57,7 @@ export default function App() {
   const [progress, setProgress] = useState(null)
   const [theme,          setTheme]          = useState('light')
   const [corners,        setCorners]        = useState('sharp')
+  const [scapeName,      setScapeName]      = useState('')
   const [recording,      setRecording]      = useState(false)
   const [recordProgress, setRecordProgress] = useState(0)
   const [recordedVideo,  setRecordedVideo]  = useState(null) // { blob, ext } when ready to save
@@ -213,6 +214,24 @@ export default function App() {
   return (
     <>
       <div ref={containerRef} style={{ width: '100vw', height: '100vh', overflow: 'hidden' }} />
+
+      {scapeName && (
+        <div style={{
+          position: 'fixed', top: '50%', left: '50%',
+          transform: 'translate(-50%, -50%)',
+          fontSize: '40pt',
+          fontFamily: "'Zalando Sans Expanded', 'Unbounded', 'Impact', 'Arial Black', sans-serif",
+          fontWeight: 800,
+          color: theme === 'dark' ? '#f0ede4' : '#000000',
+          pointerEvents: 'none',
+          userSelect: 'none',
+          zIndex: 10,
+          whiteSpace: 'nowrap',
+        }}>
+          {scapeName}
+        </div>
+      )}
+
       {!VIEW_MODE && <UploadPanel
         onLoad={handleLoad}
         onDelete={handleDelete}
@@ -228,6 +247,8 @@ export default function App() {
         recordedVideo={recordedVideo}
         onSaveVideo={handleSaveVideo}
         onCopyLink={handleCopyLink}
+        scapeName={scapeName}
+        onScapeNameChange={setScapeName}
       />}
     </>
   )

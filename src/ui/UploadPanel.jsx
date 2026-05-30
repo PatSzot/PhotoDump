@@ -12,6 +12,7 @@ export default function UploadPanel({
   onRecord, isRecording, recordProgress,
   recordedVideo, onSaveVideo,
   onCopyLink,
+  scapeName, onScapeNameChange,
 }) {
   const photoInputRef = useRef(null)
   const [isEditing,    setIsEditing]    = useState(false)
@@ -140,6 +141,30 @@ export default function UploadPanel({
             </button>
 
             {showTheme && (<>
+
+              {/* Scape Name */}
+              <div style={{ ...s.dividerH, background: dividerColor }} />
+              <div style={{ padding: '14px 20px 16px' }}>
+                <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.08em', color: textSecondary, marginBottom: 8 }}>
+                  SCAPE NAME
+                </div>
+                <input
+                  type="text"
+                  placeholder="Untitled Scape"
+                  value={scapeName}
+                  onChange={e => onScapeNameChange(e.target.value)}
+                  style={{
+                    display: 'block', width: '100%', boxSizing: 'border-box',
+                    background: 'transparent', border: 'none',
+                    borderBottom: `1px solid ${dividerColor}`,
+                    color: textPrimary,
+                    fontFamily: HEADLINE, fontSize: 20, fontWeight: 500,
+                    letterSpacing: '-0.01em',
+                    padding: '2px 0 8px',
+                    outline: 'none', caretColor: textPrimary,
+                  }}
+                />
+              </div>
 
               {/* Upload Images — only when no photos loaded */}
               {count === 0 && (<>
