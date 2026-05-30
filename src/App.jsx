@@ -42,6 +42,7 @@ export default function App() {
   const [images,   setImages]   = useState([])
   const [progress, setProgress] = useState(null)
   const [song,     setSong]     = useState(null)
+  const [theme,    setTheme]    = useState('light')
 
   useEffect(() => {
     let mounted = true
@@ -90,6 +91,12 @@ export default function App() {
     setSong(null)
   }
 
+  function handleThemeChange(t) {
+    setTheme(t)
+    document.body.style.background = t === 'dark' ? '#191812' : '#F5F3EC'
+    sceneRef.current?.setBackground(t === 'dark' ? 0x191812 : 0xF5F3EC)
+  }
+
   function handleDelete(url) {
     URL.revokeObjectURL(url)
     const next = poolRef.current.filter(img => img.url !== url)
@@ -107,6 +114,8 @@ export default function App() {
         onLoadMusic={handleLoadMusic}
         song={song}
         onRemoveMusic={handleRemoveMusic}
+        theme={theme}
+        onThemeChange={handleThemeChange}
       />
     </>
   )

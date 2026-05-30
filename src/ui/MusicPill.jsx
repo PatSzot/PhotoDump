@@ -11,7 +11,7 @@ function fmt(s) {
   return `${m}:${ss}`
 }
 
-export default function MusicPill({ name, artist, albumArt, loopSecs, onRemove }) {
+export default function MusicPill({ name, artist, albumArt, loopSecs, onRemove, theme }) {
   const [playing, setPlaying] = useState(true)
   const [pct,     setPct]     = useState(0)
   const [elapsed, setElapsed] = useState(0)
@@ -30,13 +30,28 @@ export default function MusicPill({ name, artist, albumArt, loopSecs, onRemove }
     setPlaying(now)
   }
 
+  const isDark = theme === 'dark'
+  const glass = {
+    background:           isDark ? 'rgba(30,28,20,0.92)' : 'rgba(255,255,255,0.92)',
+    backdropFilter:       'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    border:               isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.07)',
+    boxShadow:            isDark ? '0 8px 40px rgba(0,0,0,0.4)' : '0 8px 40px rgba(0,0,0,0.09)',
+  }
+  const textPrimary   = isDark ? '#f0ede4' : '#000'
+  const textSecondary = isDark ? '#666'    : '#aaa'
+  const btnBg         = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'
+  const trackBg       = isDark ? 'rgba(255,255,255,0.1)'  : 'rgba(0,0,0,0.08)'
+  const playBg        = isDark ? '#f0ede4' : '#000'
+  const playColor     = isDark ? '#191812' : '#fff'
+
   return (
-    <div style={s.pill}>
+    <div style={{ ...s.pill, ...glass }}>
 
       {albumArt
         ? <img src={albumArt} alt="" style={s.art} />
         : (
-          <button style={s.playBtn} onClick={handleToggle} aria-label={playing ? 'Pause' : 'Play'}>
+          <button style={{ ...s.playBtn, background: playBg, color: playColor }} onClick={handleToggle} aria-label={playing ? 'Pause' : 'Play'}>
             <i className={playing ? 'ri-pause-fill' : 'ri-play-fill'} style={{ fontSize: 15, lineHeight: 1 }} />
           </button>
         )
@@ -49,19 +64,19 @@ export default function MusicPill({ name, artist, albumArt, loopSecs, onRemove }
 
       <div style={s.body}>
         <div style={s.nameRow}>
-          <span style={{ ...s.name, fontFamily: SANS }}>{name}</span>
-          <span style={{ ...s.badge, fontFamily: MONO }}>SLOW + VERB</span>
+          <span style={{ ...s.name, fontFamily: SANS, color: textPrimary }}>{name}</span>
+          <span style={{ ...s.badge, fontFamily: MONO, color: textSecondary }}>{isDark ? 'SLOW + VERB' : 'SLOW + VERB'}</span>
         </div>
-        {artist && <span style={{ ...s.artist, fontFamily: MONO }}>{artist.toUpperCase()}</span>}
-        <div style={s.track}>
-          <div style={{ ...s.fill, width: `${pct % 100}%` }} />
+        {artist && <span style={{ ...s.artist, fontFamily: MONO, color: textSecondary }}>{artist.toUpperCase()}</span>}
+        <div style={{ ...s.track, background: trackBg }}>
+          <div style={{ ...s.fill, width: `${pct % 100}%`, background: textPrimary }} />
         </div>
-        <span style={{ ...s.time, fontFamily: MONO }}>
+        <span style={{ ...s.time, fontFamily: MONO, color: isDark ? '#555' : '#bbb' }}>
           {fmt(elapsed)} / {fmt(loopSecs)}
         </span>
       </div>
 
-      <button style={s.closeBtn} onClick={onRemove} aria-label="Remove song">
+      <button style={{ ...s.closeBtn, background: btnBg, color: textSecondary }} onClick={onRemove} aria-label="Remove song">
         <i className="ri-close-line" style={{ fontSize: 14, lineHeight: 1 }} />
       </button>
 
@@ -69,17 +84,8 @@ export default function MusicPill({ name, artist, albumArt, loopSecs, onRemove }
   )
 }
 
-const glass = {
-  background: 'rgba(255,255,255,0.92)',
-  backdropFilter: 'blur(20px)',
-  WebkitBackdropFilter: 'blur(20px)',
-  border: '1px solid rgba(0,0,0,0.07)',
-  boxShadow: '0 8px 40px rgba(0,0,0,0.09)',
-}
-
 const s = {
   pill: {
-    ...glass,
     pointerEvents: 'auto',
     display: 'flex',
     alignItems: 'center',

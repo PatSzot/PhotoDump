@@ -306,6 +306,7 @@ export async function initScene(container) {
 
   return {
     updateTextures,
+    setBackground(hex) { renderer.setClearColor(hex, 1) },
     cleanup() {
       cancelAnimationFrame(rafId)
       window.removeEventListener('resize', onResize)
