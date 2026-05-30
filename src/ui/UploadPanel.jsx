@@ -51,51 +51,7 @@ export default function UploadPanel({
   const iconBg        = isDark ? '#f0ede4' : '#000'
   const iconColor     = isDark ? '#191812' : '#fff'
 
-  // ── Theme section (shared between empty and loaded states) ───────────────
-  const themeSection = (
-    <>
-      <button style={s.mainBtn} onClick={() => setShowTheme(v => !v)}>
-        <div style={{ ...s.iconWrap, background: iconBg, color: iconColor }}>
-          <i className={isDark ? 'ri-moon-line' : 'ri-sun-line'} style={{ fontSize: 22 }} />
-        </div>
-        <div style={s.mainText}>
-          <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>Customize</span>
-          <span style={{ ...s.mainSub, fontFamily: MONO, color: textSecondary }}>{isDark ? 'DARK' : 'LIGHT'} THEME, {corners === 'rounded' ? 'ROUNDED' : 'SQUARE'} CORNERS</span>
-        </div>
-        <i className={showTheme ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'} style={{ ...s.chevron, color: textMuted }} />
-      </button>
-
-      {showTheme && (<>
-        <div style={s.toggleRow} onClick={() => onThemeChange(isDark ? 'light' : 'dark')}
-          role="button" tabIndex={0}
-          onKeyDown={e => e.key === 'Enter' && onThemeChange(isDark ? 'light' : 'dark')}
-        >
-          <div style={s.mainText}>
-            <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>Dark Mode</span>
-            <span style={{ ...s.mainSub, fontFamily: MONO, color: textSecondary }}>{isDark ? 'ON' : 'OFF'}</span>
-          </div>
-          <div style={{ ...s.toggleTrack, background: isDark ? textPrimary : (isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)') }}>
-            <div style={{ ...s.toggleThumb, transform: isDark ? 'translateX(18px)' : 'translateX(2px)', background: isDark ? (isDark ? '#191812' : '#fff') : textSecondary }} />
-          </div>
-        </div>
-
-        <div style={{ ...s.dividerH, background: dividerColor }} />
-
-        <div style={s.toggleRow} onClick={() => onCornersChange(corners === 'rounded' ? 'sharp' : 'rounded')}
-          role="button" tabIndex={0}
-          onKeyDown={e => e.key === 'Enter' && onCornersChange(corners === 'rounded' ? 'sharp' : 'rounded')}
-        >
-          <div style={s.mainText}>
-            <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>Rounded Corners</span>
-            <span style={{ ...s.mainSub, fontFamily: MONO, color: textSecondary }}>{corners === 'rounded' ? 'ON' : 'OFF'}</span>
-          </div>
-          <div style={{ ...s.toggleTrack, background: corners === 'rounded' ? textPrimary : (isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)') }}>
-            <div style={{ ...s.toggleThumb, transform: corners === 'rounded' ? 'translateX(18px)' : 'translateX(2px)', background: corners === 'rounded' ? (isDark ? '#191812' : '#fff') : textSecondary }} />
-          </div>
-        </div>
-      </>)}
-    </>
-  )
+  const trackOff = isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)'
 
   return (
     <>
@@ -168,11 +124,27 @@ export default function UploadPanel({
           </div>
         )}
 
-        {/* ── Bottom card — Camera Roll + Auto-fill (empty only) + Theme (always) ── */}
+        {/* ── Controls card ────────────────────────────────────────────────── */}
         {!isLoading && (
           <div style={{ ...s.card, ...glass }}>
-            {count === 0 && (
-              <>
+
+            {/* Controls accordion header */}
+            <button style={s.mainBtn} onClick={() => setShowTheme(v => !v)}>
+              <div style={{ ...s.iconWrap, background: iconBg, color: iconColor }}>
+                <i className="ri-settings-3-line" style={{ fontSize: 22 }} />
+              </div>
+              <div style={s.mainText}>
+                <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>Controls</span>
+                <span style={{ ...s.mainSub, fontFamily: MONO, color: textSecondary }}>{isDark ? 'DARK' : 'LIGHT'} THEME · {corners === 'rounded' ? 'ROUNDED' : 'SQUARE'} CORNERS</span>
+              </div>
+              <i className={showTheme ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'} style={{ ...s.chevron, color: textMuted }} />
+            </button>
+
+            {showTheme && (<>
+
+              {/* Upload Images — only when no photos loaded */}
+              {count === 0 && (<>
+                <div style={{ ...s.dividerH, background: dividerColor }} />
                 <button style={s.mainBtn} onClick={openPhotoPicker}>
                   <div style={{ ...s.iconWrap, background: iconBg, color: iconColor }}>
                     <i className="ri-image-2-line" style={{ fontSize: 22 }} />
@@ -183,54 +155,80 @@ export default function UploadPanel({
                   </div>
                   <i className="ri-arrow-right-s-line" style={{ ...s.chevron, color: textMuted }} />
                 </button>
+              </>)}
 
-                <div style={{ ...s.dividerH, background: dividerColor }} />
-              </>
-            )}
-
-            {themeSection}
-
-            <div style={{ ...s.dividerH, background: dividerColor }} />
-
-            {/* ── Animate and Share ── */}
-            <button style={s.mainBtn} onClick={() => setShowAnimate(v => !v)}>
-              <div style={{ ...s.iconWrap, background: iconBg, color: iconColor }}>
-                <i className="ri-share-line" style={{ fontSize: 22 }} />
-              </div>
-              <div style={s.mainText}>
-                <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>Animate and Share</span>
-                <span style={{ ...s.mainSub, fontFamily: MONO, color: textSecondary }}>EXPORT AS VIDEO</span>
-              </div>
-              <i className={showAnimate ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'} style={{ ...s.chevron, color: textMuted }} />
-            </button>
-
-            {showAnimate && (<>
+              {/* Dark Mode toggle */}
               <div style={{ ...s.dividerH, background: dividerColor }} />
-              <button
-                style={{ ...s.mainBtn, opacity: isRecording ? 0.6 : 1 }}
-                onClick={isRecording ? undefined : recordedVideo ? onSaveVideo : onRecord}
-                disabled={isRecording}
+              <div style={s.toggleRow} onClick={() => onThemeChange(isDark ? 'light' : 'dark')}
+                role="button" tabIndex={0}
+                onKeyDown={e => e.key === 'Enter' && onThemeChange(isDark ? 'light' : 'dark')}
               >
-                <div style={{ ...s.iconWrap, background: recordedVideo ? textPrimary : iconBg, color: recordedVideo ? (isDark ? '#191812' : '#fff') : iconColor }}>
-                  <i className={recordedVideo ? 'ri-download-2-line' : 'ri-video-line'} style={{ fontSize: 22 }} />
+                <div style={s.mainText}>
+                  <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>Dark Mode</span>
+                  <span style={{ ...s.mainSub, fontFamily: MONO, color: textSecondary }}>{isDark ? 'ON' : 'OFF'}</span>
                 </div>
-                <div style={{ ...s.mainText }}>
-                  <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>Video Loop 1</span>
-                  <span style={{ ...s.mainSub, fontFamily: MONO, color: recordedVideo ? textPrimary : textSecondary }}>
-                    {isRecording
-                      ? `RECORDING  ${Math.round(recordProgress * 100)}%`
-                      : recordedVideo
-                        ? 'READY — TAP TO SAVE'
-                        : '1080 × 1920  ·  15 SECS'}
-                  </span>
-                  {isRecording && (
-                    <div style={{ height: 3, borderRadius: 2, marginTop: 6, overflow: 'hidden', background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }}>
-                      <div style={{ height: '100%', borderRadius: 2, background: textPrimary, width: `${Math.round(recordProgress * 100)}%`, transition: 'width 0.3s linear' }} />
-                    </div>
-                  )}
+                <div style={{ ...s.toggleTrack, background: isDark ? textPrimary : trackOff }}>
+                  <div style={{ ...s.toggleThumb, transform: isDark ? 'translateX(18px)' : 'translateX(2px)', background: isDark ? (isDark ? '#191812' : '#fff') : textSecondary }} />
                 </div>
-                {!isRecording && <i className="ri-arrow-right-s-line" style={{ ...s.chevron, color: textMuted }} />}
+              </div>
+
+              {/* Rounded Corners toggle */}
+              <div style={{ ...s.dividerH, background: dividerColor }} />
+              <div style={s.toggleRow} onClick={() => onCornersChange(corners === 'rounded' ? 'sharp' : 'rounded')}
+                role="button" tabIndex={0}
+                onKeyDown={e => e.key === 'Enter' && onCornersChange(corners === 'rounded' ? 'sharp' : 'rounded')}
+              >
+                <div style={s.mainText}>
+                  <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>Rounded Corners</span>
+                  <span style={{ ...s.mainSub, fontFamily: MONO, color: textSecondary }}>{corners === 'rounded' ? 'ON' : 'OFF'}</span>
+                </div>
+                <div style={{ ...s.toggleTrack, background: corners === 'rounded' ? textPrimary : trackOff }}>
+                  <div style={{ ...s.toggleThumb, transform: corners === 'rounded' ? 'translateX(18px)' : 'translateX(2px)', background: corners === 'rounded' ? (isDark ? '#191812' : '#fff') : textSecondary }} />
+                </div>
+              </div>
+
+              {/* Animate and Share */}
+              <div style={{ ...s.dividerH, background: dividerColor }} />
+              <button style={s.mainBtn} onClick={() => setShowAnimate(v => !v)}>
+                <div style={{ ...s.iconWrap, background: iconBg, color: iconColor }}>
+                  <i className="ri-film-line" style={{ fontSize: 22 }} />
+                </div>
+                <div style={s.mainText}>
+                  <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>Animate and Share</span>
+                  <span style={{ ...s.mainSub, fontFamily: MONO, color: textSecondary }}>EXPORT AS VIDEO</span>
+                </div>
+                <i className={showAnimate ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'} style={{ ...s.chevron, color: textMuted }} />
               </button>
+
+              {showAnimate && (<>
+                <div style={{ ...s.dividerH, background: dividerColor }} />
+                <button
+                  style={{ ...s.mainBtn, opacity: isRecording ? 0.6 : 1 }}
+                  onClick={isRecording ? undefined : recordedVideo ? onSaveVideo : onRecord}
+                  disabled={isRecording}
+                >
+                  <div style={{ ...s.iconWrap, background: recordedVideo ? textPrimary : iconBg, color: recordedVideo ? (isDark ? '#191812' : '#fff') : iconColor }}>
+                    <i className={recordedVideo ? 'ri-download-2-line' : 'ri-video-line'} style={{ fontSize: 22 }} />
+                  </div>
+                  <div style={s.mainText}>
+                    <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>Video Loop 1</span>
+                    <span style={{ ...s.mainSub, fontFamily: MONO, color: recordedVideo ? textPrimary : textSecondary }}>
+                      {isRecording
+                        ? `RECORDING  ${Math.round(recordProgress * 100)}%`
+                        : recordedVideo
+                          ? 'READY — TAP TO SAVE'
+                          : '1080 × 1920  ·  15 SECS'}
+                    </span>
+                    {isRecording && (
+                      <div style={{ height: 3, borderRadius: 2, marginTop: 6, overflow: 'hidden', background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }}>
+                        <div style={{ height: '100%', borderRadius: 2, background: textPrimary, width: `${Math.round(recordProgress * 100)}%`, transition: 'width 0.3s linear' }} />
+                      </div>
+                    )}
+                  </div>
+                  {!isRecording && <i className="ri-arrow-right-s-line" style={{ ...s.chevron, color: textMuted }} />}
+                </button>
+              </>)}
+
             </>)}
           </div>
         )}
