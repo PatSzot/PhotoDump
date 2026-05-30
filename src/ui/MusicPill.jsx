@@ -11,7 +11,7 @@ function fmt(s) {
   return `${m}:${ss}`
 }
 
-export default function MusicPill({ name, loopSecs, onRemove }) {
+export default function MusicPill({ name, artist, albumArt, loopSecs, onRemove }) {
   const [playing, setPlaying] = useState(true)
   const [pct,     setPct]     = useState(0)
   const [elapsed, setElapsed] = useState(0)
@@ -33,15 +33,26 @@ export default function MusicPill({ name, loopSecs, onRemove }) {
   return (
     <div style={s.pill}>
 
-      <button style={s.playBtn} onClick={handleToggle} aria-label={playing ? 'Pause' : 'Play'}>
-        <i className={playing ? 'ri-pause-fill' : 'ri-play-fill'} style={{ fontSize: 15, lineHeight: 1 }} />
-      </button>
+      {albumArt
+        ? <img src={albumArt} alt="" style={s.art} />
+        : (
+          <button style={s.playBtn} onClick={handleToggle} aria-label={playing ? 'Pause' : 'Play'}>
+            <i className={playing ? 'ri-pause-fill' : 'ri-play-fill'} style={{ fontSize: 15, lineHeight: 1 }} />
+          </button>
+        )
+      }
+      {albumArt && (
+        <button style={s.playOverlay} onClick={handleToggle} aria-label={playing ? 'Pause' : 'Play'}>
+          <i className={playing ? 'ri-pause-fill' : 'ri-play-fill'} style={{ fontSize: 13, lineHeight: 1 }} />
+        </button>
+      )}
 
       <div style={s.body}>
         <div style={s.nameRow}>
           <span style={{ ...s.name, fontFamily: SANS }}>{name}</span>
           <span style={{ ...s.badge, fontFamily: MONO }}>SLOW + VERB</span>
         </div>
+        {artist && <span style={{ ...s.artist, fontFamily: MONO }}>{artist.toUpperCase()}</span>}
         <div style={s.track}>
           <div style={{ ...s.fill, width: `${pct % 100}%` }} />
         </div>
@@ -77,11 +88,33 @@ const s = {
     padding: '12px 14px',
     width: '100%',
   },
+  art: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    objectFit: 'cover',
+    flexShrink: 0,
+  },
   playBtn: {
     width: 36,
     height: 36,
     borderRadius: 10,
     background: '#000',
+    border: 'none',
+    color: '#fff',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    flexShrink: 0,
+  },
+  playOverlay: {
+    marginLeft: -48,
+    marginRight: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    background: 'rgba(0,0,0,0.35)',
     border: 'none',
     color: '#fff',
     display: 'flex',
@@ -113,6 +146,14 @@ const s = {
     textOverflow: 'ellipsis',
     flex: 1,
     minWidth: 0,
+  },
+  artist: {
+    fontSize: 10,
+    color: '#aaa',
+    letterSpacing: '0.06em',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
   },
   badge: {
     fontSize: 8,

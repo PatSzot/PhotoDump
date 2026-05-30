@@ -76,6 +76,23 @@ export async function loadSong(file) {
   }
 }
 
+export async function loadFromUrl(url, name) {
+  await unload()
+
+  ctx = new AudioContext()
+  await ctx.resume()   // unlock iOS
+
+  const res = await fetch(url)
+  const ab  = await res.arrayBuffer()
+  buf = await ctx.decodeAudioData(ab)
+
+  buildGraph()
+  tStart = ctx.currentTime
+  src.start()
+
+  return { name, loopSecs: buf.duration / RATE }
+}
+
 export async function togglePlay() {
   if (!ctx) return false
   if (ctx.state === 'running') { await ctx.suspend(); return false }

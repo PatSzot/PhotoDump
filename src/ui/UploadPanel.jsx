@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from 'react'
 import 'remixicon/fonts/remixicon.css'
 import MusicPill from './MusicPill.jsx'
+import MusicSearch from './MusicSearch.jsx'
 
 const MAX_PER_PICK = 100
 const MONO     = '"IBM Plex Mono", monospace'
@@ -11,15 +12,14 @@ export default function UploadPanel({
   onLoadMusic, song, onRemoveMusic,
 }) {
   const photoInputRef = useRef(null)
-  const musicInputRef = useRef(null)
-  const [isEditing, setIsEditing] = useState(false)
+  const [isEditing,     setIsEditing]     = useState(false)
+  const [showMusicSearch, setShowMusicSearch] = useState(false)
   const count     = images.length
   const isLoading = progress !== null
 
   useEffect(() => { if (count === 0) setIsEditing(false) }, [count])
 
   function openPhotoPicker() { if (!isLoading) photoInputRef.current?.click() }
-  function openMusicPicker() { musicInputRef.current?.click() }
 
   function handlePhotoChange(e) {
     const files = Array.from(e.target.files ?? [])
@@ -30,21 +30,21 @@ export default function UploadPanel({
     e.target.value = ''
   }
 
-  function handleMusicChange(e) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    onLoadMusic(file)
-    e.target.value = ''
+  function handleMusicSelect(track) {
+    setShowMusicSearch(false)
+    onLoadMusic(track)
   }
 
   const pct = progress ? Math.round((progress.done / progress.total) * 100) : 0
 
   return (
     <>
-      {/* ── Hidden inputs ─────────────────────────────────────────── */}
+      {showMusicSearch && (
+        <MusicSearch onSelect={handleMusicSelect} onClose={() => setShowMusicSearch(false)} />
+      )}
+
+      {/* ── Hidden photo input ─────────────────────────────────────── */}
       <input ref={photoInputRef} type="file" accept="image/*" multiple onChange={handlePhotoChange}
-        style={HIDDEN} />
-      <input ref={musicInputRef} type="file" accept="audio/*" onChange={handleMusicChange}
         style={HIDDEN} />
 
       <div style={s.root}>
@@ -110,7 +110,7 @@ export default function UploadPanel({
             {!song && (
               <>
                 <div style={s.pillDivider} />
-                <button style={s.pillIconBtn} onClick={openMusicPicker} title="Add music">
+                <button style={s.pillIconBtn} onClick={() => setShowMusicSearch(true)} title="Add music">
                   <i className="ri-music-2-line" style={{ fontSize: 14 }} />
                 </button>
               </>
@@ -150,7 +150,7 @@ export default function UploadPanel({
 
             <div style={s.dividerH} />
 
-            <button style={s.mainBtn} onClick={openMusicPicker}>
+            <button style={s.mainBtn} onClick={() => setShowMusicSearch(true)}>
               <div style={{ ...s.iconWrap, background: song ? '#555' : '#1a1a1a' }}>
                 <i className="ri-music-2-line" style={{ fontSize: 22 }} />
               </div>

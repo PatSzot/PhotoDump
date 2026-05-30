@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import exifr from 'exifr'
 import { initScene } from './scene/index.js'
 import UploadPanel from './ui/UploadPanel.jsx'
-import { loadSong, unload } from './audio/engine.js'
+import { loadFromUrl, unload } from './audio/engine.js'
 
 // ─── EXIF helpers ─────────────────────────────────────────────────────────────
 
@@ -74,9 +74,9 @@ export default function App() {
     applyPool([...poolRef.current, ...newImages], true)
   }
 
-  async function handleLoadMusic(file) {
-    const result = await loadSong(file)
-    setSong(result)
+  async function handleLoadMusic(track) {
+    const result = await loadFromUrl(track.previewUrl, track.name)
+    setSong({ ...result, artist: track.artist, albumArt: track.albumArt })
   }
 
   async function handleRemoveMusic() {
