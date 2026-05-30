@@ -144,10 +144,10 @@ export async function initScene(container) {
   const W = window.innerWidth
   const H = window.innerHeight
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true })
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
   renderer.setSize(W, H)
-  renderer.setClearColor(0xF5F3EC, 1)
+  renderer.setClearColor(0x000000, 0)  // transparent — background comes from body CSS
   container.appendChild(renderer.domElement)
 
   const scene  = new THREE.Scene()
@@ -334,7 +334,7 @@ export async function initScene(container) {
 
   return {
     updateTextures,
-    setBackground(hex) { renderer.setClearColor(hex, 1) },
+    setBackground(_hex) { /* background handled by body CSS; recorder sets clearColor directly */ },
     setStyle({ corner }) {
       if (corner !== undefined) style.corner = corner
     },

@@ -63,6 +63,10 @@ export default function App() {
   const [recordedVideo,  setRecordedVideo]  = useState(null) // { blob, ext } when ready to save
 
   useEffect(() => {
+    document.body.style.background = theme === 'dark' ? '#191812' : '#F5F3EC'
+  }, [theme])
+
+  useEffect(() => {
     let mounted = true
     initScene(containerRef.current).then(async scene => {
       if (!mounted) { scene.cleanup(); return }
@@ -213,24 +217,27 @@ export default function App() {
 
   return (
     <>
-      <div ref={containerRef} style={{ width: '100vw', height: '100vh', overflow: 'hidden' }} />
-
+      {/* Name sits behind the canvas */}
       {scapeName && (
         <div style={{
           position: 'fixed', top: '50%', left: '50%',
           transform: 'translate(-50%, -50%)',
           fontSize: '40pt',
-          fontFamily: "'Zalando Sans Expanded', 'Unbounded', 'Impact', 'Arial Black', sans-serif",
-          fontWeight: 800,
+          fontFamily: "'Zalando Sans SemiExpanded', sans-serif",
+          fontWeight: 900,
           color: theme === 'dark' ? '#f0ede4' : '#000000',
           pointerEvents: 'none',
           userSelect: 'none',
-          zIndex: 10,
+          zIndex: 0,
           whiteSpace: 'nowrap',
+          textTransform: 'uppercase',
         }}>
           {scapeName}
         </div>
       )}
+
+      {/* Canvas sits above — transparent background lets name show through */}
+      <div ref={containerRef} style={{ position: 'relative', zIndex: 1, width: '100vw', height: '100vh', overflow: 'hidden' }} />
 
       {!VIEW_MODE && <UploadPanel
         onLoad={handleLoad}
