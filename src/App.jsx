@@ -34,20 +34,31 @@ async function readMeta(file) {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function blobToDataUrl(blob) {
+// Compress a blob/object URL to a JPEG data URL at max 1024px (keeps uploads small)
+function compressImageToDataUrl(url) {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result)
-    reader.onerror = reject
-    reader.readAsDataURL(blob)
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      const MAX = 1024
+      const scale = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight, 1))
+      const w = Math.max(1, Math.round(img.naturalWidth  * scale))
+      const h = Math.max(1, Math.round(img.naturalHeight * scale))
+      const canvas = document.createElement('canvas')
+      canvas.width = w; canvas.height = h
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+      resolve(canvas.toDataURL('image/jpeg', 0.85))
+    }
+    img.onerror = reject
+    img.src = url
   })
 }
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 
-const _params    = new URLSearchParams(window.location.search)
-const SHARE_PARAM = _params.get('share')
-const VIEW_MODE   = _params.has('view') || !!SHARE_PARAM
+const _params   = new URLSearchParams(window.location.search)
+const SHARE_ID  = _params.get('s')
+const VIEW_MODE = _params.has('view') || !!SHARE_ID
 
 export default function App() {
   const containerRef = useRef(null)
@@ -72,15 +83,30 @@ export default function App() {
       if (!mounted) { scene.cleanup(); return }
       sceneRef.current = scene
 
-      if (SHARE_PARAM) {
+      if (SHARE_ID) {
         try {
-          const res = await fetch(decodeURIComponent(SHARE_PARAM))
-          const manifest = await res.json()
-          if (mounted && Array.isArray(manifest) && manifest.length > 0) {
-            poolRef.current = manifest
-            setImages([...manifest])
-            setProgress({ done: 0, total: manifest.length })
-            scene.updateTextures(manifest, (done, total) => {
+          const res = await fetch(`/api/share?id=${SHARE_ID}`)
+          if (!res.ok) throw new Error(`API ${res.status}`)
+          const { images = [], settings = {} } = await res.json()
+
+          if (!mounted) return
+
+          // Restore settings
+          if (settings.theme && settings.theme !== 'light') {
+            setTheme(settings.theme)
+          }
+          if (settings.corners === 'rounded') {
+            setCorners('rounded')
+            scene.setStyle({ corner: 0.12 })
+          }
+          if (settings.name) setScapeName(settings.name)
+
+          // Load images
+          if (images.length > 0) {
+            poolRef.current = images
+            setImages([...images])
+            setProgress({ done: 0, total: images.length })
+            scene.updateTextures(images, (done, total) => {
               setProgress({ done, total })
               if (done === total) setTimeout(() => setProgress(null), 800)
             })
@@ -173,30 +199,30 @@ export default function App() {
   }
 
   async function handleCopyLink() {
-    if (!poolRef.current.length) {
-      await navigator.clipboard.writeText(`${window.location.origin}/?view`)
-      return
-    }
-
-    const entries = await Promise.all(poolRef.current.map(async ({ url, meta }) => {
-      const res  = await fetch(url)
-      const blob = await res.blob()
-      const dataUrl = await blobToDataUrl(blob)
-      return { dataUrl, meta }
-    }))
+    // Compress images to JPEG at max 1024px before upload
+    const entries = await Promise.all(
+      poolRef.current.map(async ({ url, meta }) => ({
+        dataUrl: await compressImageToDataUrl(url),
+        meta,
+      }))
+    )
 
     const res = await fetch('/api/share', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ entries }),
+      body: JSON.stringify({
+        entries,
+        settings: { theme, corners, name: scapeName },
+      }),
     })
 
-    if (!res.ok) throw new Error('Upload failed')
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err.error || `Upload failed (${res.status})`)
+    }
 
-    const { manifestUrl } = await res.json()
-    await navigator.clipboard.writeText(
-      `${window.location.origin}/?view&share=${encodeURIComponent(manifestUrl)}`
-    )
+    const { id } = await res.json()
+    await navigator.clipboard.writeText(`${window.location.origin}/?view&s=${id}`)
   }
 
   function handleCornersChange(v) {
