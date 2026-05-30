@@ -134,7 +134,7 @@ export default function UploadPanel({
               <div style={s.mainText}>
                 <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>Create My Scape</span>
               </div>
-              <i className={showTheme ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'} style={{ ...s.chevron, color: textMuted }} />
+              <i className={showTheme ? 'ri-close-line' : 'ri-add-line'} style={{ ...s.chevron, fontSize: 26, color: textMuted }} />
             </button>
 
             {showTheme && (<>
