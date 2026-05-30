@@ -27,10 +27,25 @@ const VERT = /* glsl */`
 const FRAG = /* glsl */`
   uniform sampler2D uTexture;
   uniform float uOpacity;
+  uniform float uCorner;    // 0.0 = sharp, 0.12 = rounded
+  uniform float uSoftEdge;  // 0.0 = hard edge, 1.0 = soft feathered edge
   varying vec2 vUv;
+
   void main() {
     vec4 color = texture2D(uTexture, vUv);
-    gl_FragColor = vec4(color.rgb, color.a * uOpacity);
+
+    // Rounded corner SDF
+    vec2 p = vUv * 2.0 - 1.0;
+    vec2 q = abs(p) - 1.0 + uCorner;
+    float d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - uCorner;
+    float cornerMask = 1.0 - smoothstep(-0.02, 0.02, d);
+
+    // Soft edge vignette
+    vec2 edgeDist = min(vUv, 1.0 - vUv);
+    float softMask = smoothstep(0.0, 0.15, min(edgeDist.x, edgeDist.y));
+    float edgeMask = mix(1.0, softMask, uSoftEdge);
+
+    gl_FragColor = vec4(color.rgb, color.a * uOpacity * cornerMask * edgeMask);
   }
 `
 
@@ -142,6 +157,9 @@ export async function initScene(container) {
   controls.zoomSpeed       = 0.8
   controls.autoRotate      = false
 
+  // ─── Style state (updated via setStyle) ──────────────────────────────────
+  const style = { corner: 0.12, softEdge: 0.0 }
+
   // ─── Load MYSCAPE assets in order ────────────────────────────────────────
   const assets = await Promise.all(LETTERS.map(loadSvg))
 
@@ -159,10 +177,12 @@ export async function initScene(container) {
     const mat = new THREE.ShaderMaterial({
       vertexShader: VERT, fragmentShader: FRAG,
       uniforms: {
-        uTexture: { value: tex },
-        uSizeX:   { value: aspect >= 1 ? base : base * aspect },
-        uSizeY:   { value: aspect >= 1 ? base / aspect : base },
-        uOpacity: { value: 1.0 },
+        uTexture:  { value: tex },
+        uSizeX:    { value: aspect >= 1 ? base : base * aspect },
+        uSizeY:    { value: aspect >= 1 ? base / aspect : base },
+        uOpacity:  { value: 1.0 },
+        uCorner:   { value: style.corner },
+        uSoftEdge: { value: style.softEdge },
       },
       transparent: true, depthWrite: false, side: THREE.DoubleSide,
     })
@@ -218,10 +238,12 @@ export async function initScene(container) {
     const mat = new THREE.ShaderMaterial({
       vertexShader: VERT, fragmentShader: FRAG,
       uniforms: {
-        uTexture: { value: placeholder?.tex ?? assets[0].tex },
-        uSizeX:   { value: base },
-        uSizeY:   { value: base },
-        uOpacity: { value: 0 },
+        uTexture:  { value: placeholder?.tex ?? assets[0].tex },
+        uSizeX:    { value: base },
+        uSizeY:    { value: base },
+        uOpacity:  { value: 0 },
+        uCorner:   { value: style.corner },
+        uSoftEdge: { value: style.softEdge },
       },
       transparent: true, depthWrite: false, side: THREE.DoubleSide,
     })
@@ -307,6 +329,14 @@ export async function initScene(container) {
   return {
     updateTextures,
     setBackground(hex) { renderer.setClearColor(hex, 1) },
+    setStyle({ corner, softEdge }) {
+      if (corner   !== undefined) style.corner   = corner
+      if (softEdge !== undefined) style.softEdge = softEdge
+      for (const mesh of particles) {
+        if (corner   !== undefined) mesh.material.uniforms.uCorner.value   = corner
+        if (softEdge !== undefined) mesh.material.uniforms.uSoftEdge.value = softEdge
+      }
+    },
     cleanup() {
       cancelAnimationFrame(rafId)
       window.removeEventListener('resize', onResize)

@@ -43,6 +43,8 @@ export default function App() {
   const [progress, setProgress] = useState(null)
   const [song,     setSong]     = useState(null)
   const [theme,    setTheme]    = useState('light')
+  const [corners,  setCorners]  = useState('rounded')   // 'rounded' | 'sharp'
+  const [sharpness,setSharpness]= useState('sharp')     // 'sharp' | 'soft'
 
   useEffect(() => {
     let mounted = true
@@ -97,6 +99,16 @@ export default function App() {
     sceneRef.current?.setBackground(t === 'dark' ? 0x191812 : 0xF5F3EC)
   }
 
+  function handleCornersChange(v) {
+    setCorners(v)
+    sceneRef.current?.setStyle({ corner: v === 'rounded' ? 0.12 : 0.0 })
+  }
+
+  function handleSharpnessChange(v) {
+    setSharpness(v)
+    sceneRef.current?.setStyle({ softEdge: v === 'soft' ? 1.0 : 0.0 })
+  }
+
   function handleDelete(url) {
     URL.revokeObjectURL(url)
     const next = poolRef.current.filter(img => img.url !== url)
@@ -116,6 +128,10 @@ export default function App() {
         onRemoveMusic={handleRemoveMusic}
         theme={theme}
         onThemeChange={handleThemeChange}
+        corners={corners}
+        onCornersChange={handleCornersChange}
+        sharpness={sharpness}
+        onSharpnessChange={handleSharpnessChange}
       />
     </>
   )

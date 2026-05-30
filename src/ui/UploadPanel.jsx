@@ -11,10 +11,13 @@ export default function UploadPanel({
   onLoad, onDelete, images, progress,
   onLoadMusic, song, onRemoveMusic,
   theme, onThemeChange,
+  corners, onCornersChange,
+  sharpness, onSharpnessChange,
 }) {
   const photoInputRef = useRef(null)
   const [isEditing,       setIsEditing]       = useState(false)
   const [showMusicSearch, setShowMusicSearch] = useState(false)
+  const [showTheme,       setShowTheme]       = useState(false)
   const count     = images.length
   const isLoading = progress !== null
   const isDark    = theme === 'dark'
@@ -134,11 +137,6 @@ export default function UploadPanel({
             )}
 
             <div style={{ ...s.pillDivider, background: dividerColor }} />
-            <button style={{ ...s.pillIconBtn, color: textSecondary }} onClick={() => onThemeChange(isDark ? 'light' : 'dark')} title="Toggle theme">
-              <i className={isDark ? 'ri-sun-line' : 'ri-moon-line'} style={{ fontSize: 14 }} />
-            </button>
-
-            <div style={{ ...s.pillDivider, background: dividerColor }} />
             <button style={{ ...s.editBtn, fontFamily: MONO, color: isDark ? '#bbb' : '#444' }} onClick={() => setIsEditing(v => !v)}>
               {isEditing
                 ? <><i className="ri-check-line" style={{ marginRight: 4 }} />DONE</>
@@ -185,15 +183,71 @@ export default function UploadPanel({
 
             <div style={{ ...s.dividerH, background: dividerColor }} />
 
-            <button style={s.mainBtn} onClick={() => onThemeChange(isDark ? 'light' : 'dark')}>
+            {/* ── Theme container ── */}
+            <button style={s.mainBtn} onClick={() => setShowTheme(v => !v)}>
               <div style={{ ...s.iconWrap, background: iconBg, color: iconColor }}>
-                <i className={isDark ? 'ri-sun-line' : 'ri-moon-line'} style={{ fontSize: 22 }} />
+                <i className={isDark ? 'ri-moon-line' : 'ri-sun-line'} style={{ fontSize: 22 }} />
               </div>
               <div style={s.mainText}>
-                <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>{isDark ? 'Light mode' : 'Dark mode'}</span>
-                <span style={{ ...s.mainSub, fontFamily: MONO, color: textSecondary }}>{isDark ? '#F5F3EC' : '#191812'}</span>
+                <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>Theme</span>
+                <span style={{ ...s.mainSub, fontFamily: MONO, color: textSecondary }}>{isDark ? 'DARK MODE' : 'LIGHT MODE'}</span>
               </div>
-              <i className="ri-arrow-right-s-line" style={{ ...s.chevron, color: textMuted }} />
+              <i className={showTheme ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'} style={{ ...s.chevron, color: textMuted }} />
+            </button>
+
+            {showTheme && (
+              <div style={{ padding: '0 16px 14px', display: 'flex', gap: 8 }}>
+                <button
+                  onClick={() => onThemeChange('light')}
+                  style={{ ...s.themeOption, fontFamily: MONO,
+                    background: !isDark ? textPrimary : btnBg,
+                    color: !isDark ? (isDark ? '#191812' : '#fff') : textSecondary,
+                    border: `1px solid ${!isDark ? textPrimary : dividerColor}`,
+                  }}>
+                  <i className="ri-sun-line" style={{ marginRight: 6 }} />LIGHT
+                </button>
+                <button
+                  onClick={() => onThemeChange('dark')}
+                  style={{ ...s.themeOption, fontFamily: MONO,
+                    background: isDark ? textPrimary : btnBg,
+                    color: isDark ? '#191812' : textSecondary,
+                    border: `1px solid ${isDark ? textPrimary : dividerColor}`,
+                  }}>
+                  <i className="ri-moon-line" style={{ marginRight: 6 }} />DARK
+                </button>
+              </div>
+            )}
+
+            <div style={{ ...s.dividerH, background: dividerColor }} />
+
+            {/* ── Sharpness toggle ── */}
+            <button style={s.mainBtn} onClick={() => onSharpnessChange(sharpness === 'sharp' ? 'soft' : 'sharp')}>
+              <div style={{ ...s.iconWrap, background: iconBg, color: iconColor }}>
+                <i className="ri-contrast-line" style={{ fontSize: 22 }} />
+              </div>
+              <div style={s.mainText}>
+                <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>Sharpness</span>
+                <span style={{ ...s.mainSub, fontFamily: MONO, color: textSecondary }}>{sharpness === 'sharp' ? 'SHARP EDGES' : 'SOFT EDGES'}</span>
+              </div>
+              <div style={{ ...s.valuePill, fontFamily: MONO, background: btnBg, color: textSecondary }}>
+                {sharpness === 'sharp' ? 'SHARP' : 'SOFT'}
+              </div>
+            </button>
+
+            <div style={{ ...s.dividerH, background: dividerColor }} />
+
+            {/* ── Corner rounding toggle ── */}
+            <button style={s.mainBtn} onClick={() => onCornersChange(corners === 'rounded' ? 'sharp' : 'rounded')}>
+              <div style={{ ...s.iconWrap, background: iconBg, color: iconColor }}>
+                <i className="ri-checkbox-blank-line" style={{ fontSize: 22 }} />
+              </div>
+              <div style={s.mainText}>
+                <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>Corners</span>
+                <span style={{ ...s.mainSub, fontFamily: MONO, color: textSecondary }}>{corners === 'rounded' ? 'SLIGHTLY ROUNDED' : 'FULLY SQUARE'}</span>
+              </div>
+              <div style={{ ...s.valuePill, fontFamily: MONO, background: btnBg, color: textSecondary }}>
+                {corners === 'rounded' ? 'ROUND' : 'SQUARE'}
+              </div>
             </button>
 
           </div>
@@ -258,4 +312,6 @@ const s = {
   pillDivider: { width: 1, height: 14, margin: '0 2px' },
   pillIconBtn: { display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 6px', borderRadius: 8 },
   editBtn:     { display: 'flex', alignItems: 'center', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 10, padding: '4px 8px', borderRadius: 8, letterSpacing: '0.08em', fontWeight: 500 },
+  themeOption: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px', borderRadius: 10, cursor: 'pointer', fontSize: 10, letterSpacing: '0.08em', fontWeight: 500 },
+  valuePill:   { fontSize: 9, letterSpacing: '0.08em', fontWeight: 500, padding: '4px 8px', borderRadius: 6, flexShrink: 0 },
 }
