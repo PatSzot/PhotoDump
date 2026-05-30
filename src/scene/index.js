@@ -41,16 +41,28 @@ const FRAG = /* glsl */`
   }
 `
 
-// ─── Aspect configs ───────────────────────────────────────────────────────────
+// ─── Canvas-based loader (no crossOrigin — safe for blob URLs on iOS) ─────────
 
-const ASPECTS = [
-  [1.0, 1.0],
-  [1.0, 1.0],
-  [0.75, 1.0],
-  [0.75, 1.0],
-  [1.0, 0.75],
-  [0.65, 1.0],
-]
+function loadAsTexture(url) {
+  return new Promise(resolve => {
+    const img = new Image()
+    img.onload = () => {
+      const MAX = 1024
+      const scale = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight, 1))
+      const w = Math.max(1, Math.round(img.naturalWidth * scale))
+      const h = Math.max(1, Math.round(img.naturalHeight * scale))
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+      const tex = new THREE.CanvasTexture(canvas)
+      tex.colorSpace = THREE.SRGBColorSpace
+      resolve({ tex, aspect: img.naturalWidth / img.naturalHeight })
+    }
+    img.onerror = () => resolve(null)
+    img.src = url
+  })
+}
 
 // ─── Scene ────────────────────────────────────────────────────────────────────
 
@@ -83,7 +95,6 @@ export function initScene(container) {
 
   for (let i = 0; i < 100; i++) {
     const entry = pool[Math.floor(Math.random() * pool.length)]
-    const [sx, sy] = ASPECTS[Math.floor(Math.random() * ASPECTS.length)]
     const base = 0.9 + Math.random() * 1.3
 
     const mat = new THREE.ShaderMaterial({
@@ -91,8 +102,8 @@ export function initScene(container) {
       fragmentShader: FRAG,
       uniforms: {
         uTexture: { value: entry.tex },
-        uSizeX:   { value: sx * base },
-        uSizeY:   { value: sy * base },
+        uSizeX:   { value: base },
+        uSizeY:   { value: base },
         uOpacity: { value: 1.0 },
       },
       transparent: true,
@@ -101,6 +112,8 @@ export function initScene(container) {
     })
 
     const mesh = new THREE.Mesh(geo, mat)
+    mesh.userData.baseSize = base
+
     const r = 14
     const tx = (Math.random() - 0.5) * r * 2
     const ty = (Math.random() - 0.5) * r * 1.2
@@ -130,50 +143,49 @@ export function initScene(container) {
     particles.push(mesh)
   }
 
-  // ─── Texture loading (canvas-based to avoid iOS crossOrigin/blob issues) ────
+  // ─── Update textures ────────────────────────────────────────────────────────
+  // urls: array of blob: or http: strings
+  // onProgress(done, total): called as each texture completes
 
-  function loadBlobAsTexture(url) {
-    return new Promise(resolve => {
-      const img = new Image()
-      // Do NOT set crossOrigin — blob URLs break on iOS Safari with it set
-      img.onload = () => {
-        const MAX = 1024
-        const scale = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight))
-        const w = Math.max(1, Math.round(img.naturalWidth * scale))
-        const h = Math.max(1, Math.round(img.naturalHeight * scale))
-        const canvas = document.createElement('canvas')
-        canvas.width = w
-        canvas.height = h
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h)
-        const tex = new THREE.CanvasTexture(canvas)
-        tex.colorSpace = THREE.SRGBColorSpace
-        resolve(tex)
-      }
-      img.onerror = () => resolve(null)
-      img.src = url
-    })
-  }
+  function updateTextures(urls, onProgress) {
+    const total = particles.length
+    let done = 0
 
-  function updateTextures(urls) {
     particles.forEach((mesh, i) => {
       const url = urls[i % urls.length]
-      const delay = i * 0.015 + Math.random() * 0.15
+      const delay = i * 0.015 + Math.random() * 0.1
 
       gsap.to(mesh.material.uniforms.uOpacity, {
         value: 0,
-        duration: 0.2,
+        duration: 0.18,
         delay,
         onComplete() {
-          loadBlobAsTexture(url).then(tex => {
-            if (tex) mesh.material.uniforms.uTexture.value = tex
-            gsap.to(mesh.material.uniforms.uOpacity, { value: 1, duration: 0.35 })
+          loadAsTexture(url).then(result => {
+            if (result) {
+              const { tex, aspect } = result
+              mesh.material.uniforms.uTexture.value = tex
+
+              // Size the frame to match the image's actual aspect ratio
+              const base = mesh.userData.baseSize
+              if (aspect >= 1) {
+                mesh.material.uniforms.uSizeX.value = base
+                mesh.material.uniforms.uSizeY.value = base / aspect
+              } else {
+                mesh.material.uniforms.uSizeX.value = base * aspect
+                mesh.material.uniforms.uSizeY.value = base
+              }
+            }
+
+            gsap.to(mesh.material.uniforms.uOpacity, { value: 1, duration: 0.3 })
+
+            if (onProgress) onProgress(++done, total)
           })
         },
       })
     })
   }
 
-  // ─── Resize ───────────────────────────────────────────────────────────────
+  // ─── Resize ────────────────────────────────────────────────────────────────
 
   function onResize() {
     const w = window.innerWidth, h = window.innerHeight
@@ -183,7 +195,7 @@ export function initScene(container) {
   }
   window.addEventListener('resize', onResize)
 
-  // ─── Loop ────────────────────────────────────────────────────────────────
+  // ─── Loop ──────────────────────────────────────────────────────────────────
 
   let rafId
   const clock = new THREE.Clock()
