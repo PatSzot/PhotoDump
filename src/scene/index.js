@@ -164,7 +164,7 @@ export async function initScene(container) {
 
   // ─── Style state ─────────────────────────────────────────────────────────
   // corner: proportion of shorter side used as border-radius in canvas (0 = none)
-  const style = { corner: 0.12 }
+  const style = { corner: 0.0 }
 
   // ─── Load MYSCAPE assets in order ────────────────────────────────────────
   const assets = await Promise.all(LETTERS.map(url => loadSvg(url, style.corner)))

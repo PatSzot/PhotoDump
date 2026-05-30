@@ -34,6 +34,8 @@ async function readMeta(file) {
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 
+const VIEW_MODE = new URLSearchParams(window.location.search).has('view')
+
 export default function App() {
   const containerRef = useRef(null)
   const sceneRef     = useRef(null)
@@ -41,7 +43,7 @@ export default function App() {
   const [images,   setImages]   = useState([])
   const [progress, setProgress] = useState(null)
   const [theme,          setTheme]          = useState('light')
-  const [corners,        setCorners]        = useState('rounded')
+  const [corners,        setCorners]        = useState('sharp')
   const [recording,      setRecording]      = useState(false)
   const [recordProgress, setRecordProgress] = useState(0)
   const [recordedVideo,  setRecordedVideo]  = useState(null) // { blob, ext } when ready to save
@@ -153,7 +155,7 @@ export default function App() {
   return (
     <>
       <div ref={containerRef} style={{ width: '100vw', height: '100vh', overflow: 'hidden' }} />
-      <UploadPanel
+      {!VIEW_MODE && <UploadPanel
         onLoad={handleLoad}
         onDelete={handleDelete}
         images={images}
@@ -167,7 +169,7 @@ export default function App() {
         recordProgress={recordProgress}
         recordedVideo={recordedVideo}
         onSaveVideo={handleSaveVideo}
-      />
+      />}
     </>
   )
 }
