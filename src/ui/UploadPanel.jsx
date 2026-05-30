@@ -169,19 +169,6 @@ export default function UploadPanel({
 
             <div style={{ ...s.dividerH, background: dividerColor }} />
 
-            <button style={s.mainBtn} onClick={() => setShowMusicSearch(true)}>
-              <div style={{ ...s.iconWrap, background: song ? (isDark ? '#444' : '#555') : iconBg, color: iconColor }}>
-                <i className="ri-music-2-line" style={{ fontSize: 22 }} />
-              </div>
-              <div style={s.mainText}>
-                <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>{song ? 'Change music' : 'Add music'}</span>
-                <span style={{ ...s.mainSub, fontFamily: MONO, color: textSecondary }}>PLAYS SLOWED + REVERB</span>
-              </div>
-              <i className="ri-arrow-right-s-line" style={{ ...s.chevron, color: textMuted }} />
-            </button>
-
-            <div style={{ ...s.dividerH, background: dividerColor }} />
-
             {/* ── Theme container ── */}
             <button style={s.mainBtn} onClick={() => setShowTheme(v => !v)}>
               <div style={{ ...s.iconWrap, background: iconBg, color: iconColor }}>
@@ -194,44 +181,55 @@ export default function UploadPanel({
               <i className={showTheme ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'} style={{ ...s.chevron, color: textMuted }} />
             </button>
 
-            {showTheme && (
+            {showTheme && (<>
+              {/* Color mode */}
               <div style={{ padding: '0 16px 14px', display: 'flex', gap: 8 }}>
-                <button
-                  onClick={() => onThemeChange('light')}
-                  style={{ ...s.themeOption, fontFamily: MONO,
-                    background: !isDark ? textPrimary : btnBg,
-                    color: !isDark ? (isDark ? '#191812' : '#fff') : textSecondary,
-                    border: `1px solid ${!isDark ? textPrimary : dividerColor}`,
-                  }}>
+                <button onClick={() => onThemeChange('light')} style={{ ...s.themeOption, fontFamily: MONO,
+                  background: !isDark ? textPrimary : btnBg,
+                  color: !isDark ? '#fff' : textSecondary,
+                  border: `1px solid ${!isDark ? textPrimary : dividerColor}`,
+                }}>
                   <i className="ri-sun-line" style={{ marginRight: 6 }} />LIGHT
                 </button>
-                <button
-                  onClick={() => onThemeChange('dark')}
-                  style={{ ...s.themeOption, fontFamily: MONO,
-                    background: isDark ? textPrimary : btnBg,
-                    color: isDark ? '#191812' : textSecondary,
-                    border: `1px solid ${isDark ? textPrimary : dividerColor}`,
-                  }}>
+                <button onClick={() => onThemeChange('dark')} style={{ ...s.themeOption, fontFamily: MONO,
+                  background: isDark ? textPrimary : btnBg,
+                  color: isDark ? '#191812' : textSecondary,
+                  border: `1px solid ${isDark ? textPrimary : dividerColor}`,
+                }}>
                   <i className="ri-moon-line" style={{ marginRight: 6 }} />DARK
                 </button>
               </div>
-            )}
 
-            <div style={{ ...s.dividerH, background: dividerColor }} />
+              <div style={{ ...s.dividerH, background: dividerColor }} />
 
-            {/* ── Corner rounding toggle ── */}
-            <button style={s.mainBtn} onClick={() => onCornersChange(corners === 'rounded' ? 'sharp' : 'rounded')}>
-              <div style={{ ...s.iconWrap, background: iconBg, color: iconColor }}>
-                <i className="ri-checkbox-blank-line" style={{ fontSize: 22 }} />
-              </div>
-              <div style={s.mainText}>
-                <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>Corners</span>
-                <span style={{ ...s.mainSub, fontFamily: MONO, color: textSecondary }}>{corners === 'rounded' ? 'SLIGHTLY ROUNDED' : 'FULLY SQUARE'}</span>
-              </div>
-              <div style={{ ...s.valuePill, fontFamily: MONO, background: btnBg, color: textSecondary }}>
-                {corners === 'rounded' ? 'ROUND' : 'SQUARE'}
-              </div>
-            </button>
+              {/* Add music */}
+              <button style={s.mainBtn} onClick={() => setShowMusicSearch(true)}>
+                <div style={{ ...s.iconWrap, background: song ? (isDark ? '#444' : '#555') : iconBg, color: iconColor }}>
+                  <i className="ri-music-2-line" style={{ fontSize: 22 }} />
+                </div>
+                <div style={s.mainText}>
+                  <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>{song ? 'Change music' : 'Add music'}</span>
+                  <span style={{ ...s.mainSub, fontFamily: MONO, color: textSecondary }}>PLAYS SLOWED + REVERB</span>
+                </div>
+                <i className="ri-arrow-right-s-line" style={{ ...s.chevron, color: textMuted }} />
+              </button>
+
+              <div style={{ ...s.dividerH, background: dividerColor }} />
+
+              {/* Corners */}
+              <button style={s.mainBtn} onClick={() => onCornersChange(corners === 'rounded' ? 'sharp' : 'rounded')}>
+                <div style={{ ...s.iconWrap, background: iconBg, color: iconColor }}>
+                  <i className="ri-checkbox-blank-line" style={{ fontSize: 22 }} />
+                </div>
+                <div style={s.mainText}>
+                  <span style={{ ...s.mainLabel, fontFamily: HEADLINE, color: textPrimary }}>Corners</span>
+                  <span style={{ ...s.mainSub, fontFamily: MONO, color: textSecondary }}>{corners === 'rounded' ? 'SLIGHTLY ROUNDED' : 'FULLY SQUARE'}</span>
+                </div>
+                <div style={{ ...s.valuePill, fontFamily: MONO, background: btnBg, color: textSecondary }}>
+                  {corners === 'rounded' ? 'ROUND' : 'SQUARE'}
+                </div>
+              </button>
+            </>)}
 
           </div>
         )}
