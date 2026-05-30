@@ -72,7 +72,6 @@ function loadSvg(url, corner = 0) {
       clipRoundRect(ctx, w, h, Math.round(Math.min(w, h) * corner))
       ctx.drawImage(img, 0, 0)
       const tex = new THREE.CanvasTexture(canvas)
-      tex.colorSpace = THREE.SRGBColorSpace
       resolve({ tex, aspect: w / h })
     }
     img.onerror = () => resolve(null)
@@ -130,7 +129,6 @@ async function loadAsTexture(url, meta = {}, corner = 0) {
       drawMeta(ctx, w, h, meta)
 
       const tex = new THREE.CanvasTexture(canvas)
-      tex.colorSpace = THREE.SRGBColorSpace
       resolve({ tex, aspect: img.naturalWidth / img.naturalHeight })
     }
     img.onerror = () => resolve(null)
