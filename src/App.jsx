@@ -6,7 +6,6 @@ import LeftPanel from './components/LeftPanel.jsx'
 import RightPanel from './components/RightPanel.jsx'
 
 import { PRESETS } from './lib/presets.js'
-import { exportVideo } from './lib/exporter.js'
 import './styles/layout.css'
 
 // ─── EXIF helper ──────────────────────────────────────────────────────────────
@@ -111,12 +110,8 @@ export default function App() {
   const [scapeName,       setScapeName]       = useState('')
   const [presetId,        setPresetId]        = useState('landscape')
   const [controls,        setControls]        = useState(PRESETS['sphere'].defaults)
-  const [duration,        setDuration]        = useState(10)
   const [aspectRatio,     setAspectRatio]     = useState('1:1')
-  const [exportSize,      setExportSize]      = useState({ width: 1080, height: 1080 })
   const [previewDims,     setPreviewDims]     = useState({ width: 400, height: 400 })
-  const [exporting,       setExporting]       = useState(false)
-  const [exportProgress,  setExportProgress]  = useState(0)
 
   // ── Body background ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -205,33 +200,6 @@ export default function App() {
     return `${window.location.origin}/?view&s=${id}`
   }
 
-  // ── Video export ───────────────────────────────────────────────────────────
-  async function handleExport() {
-    const scene = scapeCanvasRef.current?.getScene()
-    if (!scene || exporting) return
-    setExporting(true)
-    setExportProgress(0)
-    try {
-      await exportVideo({
-        sceneController: scene,
-        scapeName,
-        durationSeconds: duration,
-        canvasSize: exportSize,
-        presetId,
-        onProgress: p => setExportProgress(p),
-      })
-    } catch (err) {
-      alert(
-        err.message === 'NO_MEDIARECORDER'
-          ? 'Video export requires Chrome, Firefox, or Edge.'
-          : (err.message || 'Export failed.')
-      )
-    } finally {
-      setExporting(false)
-      setExportProgress(0)
-    }
-  }
-
   // ── Render ─────────────────────────────────────────────────────────────────
   const panelBg = theme === 'dark' ? '#191812' : '#F0EDE4'
 
@@ -262,15 +230,12 @@ export default function App() {
           presetId={presetId}     controls={controls}
           onPresetChange={handlePresetChange}
           onControlsChange={setControls}
-          duration={duration}     onDurationChange={setDuration}
           aspectRatio={aspectRatio}
-          onAspectChange={(value, size) => { setAspectRatio(value); setExportSize(size) }}
+          onAspectChange={(value) => setAspectRatio(value)}
           images={images}
           onUploadClick={() => photoInputRef.current?.click()}
           onDelete={handleDelete}
           onRotate={handleRotate}
-          exporting={exporting}   exportProgress={exportProgress}
-          onExport={handleExport}
           onShare={handleCopyLink}
         />
       )}

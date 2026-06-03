@@ -24,10 +24,8 @@ export default function LeftPanel({
   corners, onCornersChange,
   scapeName, onScapeNameChange,
   presetId, controls, onPresetChange, onControlsChange,
-  duration, onDurationChange,
   aspectRatio, onAspectChange,
   images, onUploadClick, onDelete, onRotate,
-  exporting, exportProgress, onExport,
   onShare,
 }) {
   const [isOpen,   setIsOpen]   = useState(() => window.innerWidth >= 1024)
@@ -74,7 +72,6 @@ export default function LeftPanel({
 
   const isLandscape      = presetId === 'landscape'
   const isRotatingImages = presetId === 'rotatingImages'
-  const canExport        = images.length > 0 && !isLandscape && !exporting
 
   const activeSliders = isRotatingImages
     ? [
@@ -259,61 +256,25 @@ export default function LeftPanel({
 
         <Divider />
 
-        {/* Video */}
+        {/* Format */}
         <section style={{ margin: '16px 0' }}>
-          <Label>Video</Label>
-
-          {/* Loop duration */}
-          <div style={{ marginBottom: 14 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-              <span style={{ fontFamily: MONO, fontSize: 9, color: muted, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Loop</span>
-              <span style={{ fontFamily: MONO, fontSize: 9, color: text }}>{duration}s</span>
-            </div>
-            <input type="range" min={4} max={30} step={1} value={duration}
-              onChange={e => onDurationChange(parseInt(e.target.value))}
-              style={{ width: '100%', accentColor: accent, cursor: 'pointer', display: 'block' }}
-            />
+          <Label>Format</Label>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {ASPECTS.map(({ label, value, size }) => {
+              const active = aspectRatio === value
+              return (
+                <button key={value} onClick={() => onAspectChange(value, size)} style={{
+                  flex: 1, padding: '5px 0', borderRadius: 4, border: 'none', cursor: 'pointer',
+                  background: active ? (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)') : rowBg,
+                  fontFamily: MONO, fontSize: 10, letterSpacing: '0.05em',
+                  color: active ? text : muted,
+                  transition: 'all 0.14s',
+                }}>
+                  {label}
+                </button>
+              )
+            })}
           </div>
-
-          {/* Format */}
-          <div style={{ marginBottom: 14 }}>
-            <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: '0.09em', color: muted, textTransform: 'uppercase', marginBottom: 8 }}>Format</div>
-            <div style={{ display: 'flex', gap: 4 }}>
-              {ASPECTS.map(({ label, value, size }) => {
-                const active = aspectRatio === value
-                return (
-                  <button key={value} onClick={() => onAspectChange(value, size)} style={{
-                    flex: 1, padding: '5px 0', borderRadius: 4, border: 'none', cursor: 'pointer',
-                    background: active ? (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)') : rowBg,
-                    fontFamily: MONO, fontSize: 10, letterSpacing: '0.05em',
-                    color: active ? text : muted,
-                    transition: 'all 0.14s',
-                  }}>
-                    {label}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Export */}
-          <button onClick={onExport} disabled={!canExport} style={{
-            width: '100%', padding: '8px 0', borderRadius: 5, border: 'none',
-            background: canExport ? rowBg : 'transparent',
-            fontFamily: MONO, fontSize: 10, letterSpacing: '0.09em',
-            color: canExport ? text : muted,
-            cursor: canExport ? 'pointer' : 'default',
-            opacity: (!images.length || isLandscape) ? 0.35 : 1,
-            transition: 'all 0.15s',
-          }}>
-            {exporting ? `EXPORTING… ${Math.round(exportProgress * 100)}%` : 'EXPORT MP4'}
-          </button>
-
-          {exporting && (
-            <div style={{ marginTop: 6, height: 2, borderRadius: 1, background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)', overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${exportProgress * 100}%`, background: text, transition: 'width 0.3s linear', borderRadius: 1 }} />
-            </div>
-          )}
         </section>
 
       </div>

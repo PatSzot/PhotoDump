@@ -113,6 +113,12 @@
   transition: width 0.3s ease, height 0.3s ease;
 }
 
+/* ─── Canvas cursor ──────────────────────────────────────────────────────── */
+
+.canvas-animated          { cursor: zoom-in; }
+.canvas-explore           { cursor: grab; }
+.canvas-explore:active    { cursor: grabbing; }
+
 /* ─── Panel toggle button ────────────────────────────────────────────────── */
 
 .panel-toggle-btn {

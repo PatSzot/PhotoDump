@@ -71,6 +71,15 @@ export function createScapeScene(canvas) {
   orbitControls.dampingFactor  = 0.05
   orbitControls.enabled        = false
 
+  // ── Scroll-to-zoom for animated presets ────────────────────────────────────
+  function onWheelZoom(e) {
+    if (currentPresetId !== 'explore') {
+      userZoomDelta = Math.max(-3, Math.min(5, userZoomDelta - e.deltaY * 0.01))
+      e.preventDefault()
+    }
+  }
+  canvas.addEventListener('wheel', onWheelZoom, { passive: false })
+
   // ── State ──────────────────────────────────────────────────────────────────
   let meshes          = []
   let currentUrls     = []
@@ -80,7 +89,7 @@ export function createScapeScene(canvas) {
   let currentControls = { ...PRESETS['sphere'].defaults }
   let animClock       = 0
   let lastTimestamp   = null
-  let isPaused        = false
+  let userZoomDelta   = 0
   let canvasWidth     = 1080
   let canvasHeight    = 1080
 
@@ -157,6 +166,7 @@ export function createScapeScene(canvas) {
       currentControls = { ...controls }
       orbitControls.enabled = (presetId === 'explore')
       animClock = 0
+      userZoomDelta = 0
       return
     }
 
@@ -171,6 +181,7 @@ export function createScapeScene(canvas) {
       currentControls = { ...controls }
       orbitControls.enabled = (presetId === 'explore')
       animClock = 0
+      userZoomDelta = 0
 
       if (currentUrls.length > 0) {
         const newMeshes = await Promise.all(
@@ -214,6 +225,7 @@ export function createScapeScene(canvas) {
     currentControls = { ...controls }
     orbitControls.enabled = (presetId === 'explore')
     animClock = 0
+    userZoomDelta = 0
   }
 
   function updateControls(controls) {
@@ -246,8 +258,6 @@ export function createScapeScene(canvas) {
   }
 
   function tick(timestamp) {
-    if (isPaused) return
-
     if (lastTimestamp === null) lastTimestamp = timestamp
 
     if (currentPresetId === 'explore') {
@@ -258,7 +268,10 @@ export function createScapeScene(canvas) {
       driveFanAnimation()
       const state = currentPreset.getCameraState(animClock, currentControls, canvasWidth, canvasHeight)
       if (state) {
-        camera.position.copy(state.position)
+        const dir = state.position.clone().sub(state.target).normalize()
+        const baseDist = state.position.distanceTo(state.target)
+        const adjustedDist = Math.max(0.5, baseDist + userZoomDelta)
+        camera.position.copy(state.target).addScaledVector(dir, adjustedDist)
         camera.lookAt(state.target)
       }
     }
@@ -276,39 +289,6 @@ export function createScapeScene(canvas) {
     camera.updateProjectionMatrix()
   }
 
-  // ── Export helpers ─────────────────────────────────────────────────────────
-
-  function getCanvas() {
-    return renderer.domElement
-  }
-
-  function resetClock() {
-    animClock    = 0
-    lastTimestamp = null
-  }
-
-  function setClockPosition(t) {
-    animClock = t
-    driveFanAnimation()
-    if (currentPresetId !== 'explore' && currentPreset) {
-      const state = currentPreset.getCameraState(t, currentControls, canvasWidth, canvasHeight)
-      if (state) {
-        camera.position.copy(state.position)
-        camera.lookAt(state.target)
-      }
-    }
-    renderer.render(scene, camera)
-  }
-
-  function pauseLoop() {
-    isPaused = true
-  }
-
-  function resumeLoop() {
-    isPaused      = false
-    lastTimestamp = null  // prevent clock jump after pause
-  }
-
   // ── Cleanup ────────────────────────────────────────────────────────────────
 
   function dispose() {
@@ -317,6 +297,7 @@ export function createScapeScene(canvas) {
     for (const mesh of meshes) disposePhotoPlane(mesh)  // removes from parent (scene or fanGroup)
     meshes = []
     disposeNameMesh()
+    canvas.removeEventListener('wheel', onWheelZoom)
     scene.remove(fanGroup)
     scene.remove(camera)
     orbitControls.dispose()
@@ -326,6 +307,5 @@ export function createScapeScene(canvas) {
   return {
     setPhotos, setPreset, updateControls, setScapeName,
     tick, resize, dispose,
-    getCanvas, resetClock, setClockPosition, pauseLoop, resumeLoop,
   }
 }
