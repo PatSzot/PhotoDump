@@ -122,7 +122,8 @@ export default function LeftPanel({
       onClick={() => setIsOpen(o => !o)}
       aria-label={isOpen ? 'Close panel' : 'Open panel'}
     >
-      <i className={`ri-${isOpen ? 'close' : 'menu'}-line`} />
+      <i className={`toggle-icon ri-${isOpen ? 'close' : 'menu'}-line`} />
+      <span className="toggle-label">Create</span>
     </button>
 
     <aside ref={panelRef} className={`panel panel--left ${isOpen ? 'panel--visible' : 'panel--hidden'}`}>

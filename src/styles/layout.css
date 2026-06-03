@@ -133,8 +133,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   transition: opacity 0.2s ease, transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+.toggle-label { display: none; }
 
 .app-layout[data-theme="light"] .panel-toggle-btn {
   background: rgba(240, 237, 228, 0.88);
@@ -175,7 +178,7 @@
 
   .panel--left {
     top: auto;
-    bottom: 16px;
+    bottom: 72px;
     left: 8px;
     right: 8px;
     width: auto;
@@ -184,13 +187,32 @@
   }
 
   /* Slide down when hidden */
-  .panel--hidden  { transform: translateY(calc(100% + 20px)); opacity: 0; }
+  .panel--hidden  { transform: translateY(calc(100% + 88px)); opacity: 0; }
   .panel--visible { transform: translateY(0); opacity: 1; }
 
+  /* "Create" pill button — centered bottom */
   .panel-toggle-btn {
     top: auto;
     bottom: 16px;
-    left: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    height: 44px;
+    padding: 0 24px;
+    border-radius: 22px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.09em;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .toggle-icon  { display: none; }
+  .toggle-label { display: inline; }
+
+  /* Hide Create button when panel is open */
+  .panel-toggle-btn--open {
+    opacity: 0;
+    pointer-events: none;
   }
 }
 
@@ -200,7 +222,7 @@
 
   .panel--left {
     top: auto;
-    bottom: 12px;
+    bottom: 68px;
     left: 6px;
     right: 6px;
     width: auto;
@@ -208,14 +230,31 @@
     border-radius: 12px;
   }
 
-  .panel--hidden  { transform: translateY(calc(100% + 16px)); opacity: 0; }
+  .panel--hidden  { transform: translateY(calc(100% + 84px)); opacity: 0; }
   .panel--visible { transform: translateY(0); opacity: 1; }
 
+  /* "Create" pill button — centered bottom */
   .panel-toggle-btn {
     top: auto;
-    bottom: 12px;
-    left: 6px;
-    width: 32px;
-    height: 32px;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    height: 42px;
+    padding: 0 22px;
+    border-radius: 21px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.09em;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .toggle-icon  { display: none; }
+  .toggle-label { display: inline; }
+
+  /* Hide Create button when panel is open */
+  .panel-toggle-btn--open {
+    opacity: 0;
+    pointer-events: none;
   }
 }
