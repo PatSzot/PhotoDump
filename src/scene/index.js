@@ -40,6 +40,30 @@ const FRAG = /* glsl */`
 const LETTERS = ['/M.jpg', '/Y.jpg', '/S.jpg', '/C.jpg', '/A.jpg', '/P.jpg', '/E.jpg']
 const PARTICLE_COUNT = 7
 
+// ─── Name texture helper ──────────────────────────────────────────────────────
+
+function renderNameToTexture(name) {
+  const fontSize = 52
+  const padding  = 24
+  const tmp  = document.createElement('canvas')
+  const tctx = tmp.getContext('2d')
+  tctx.font  = `500 ${fontSize}px "Zalando Sans SemiExpanded", sans-serif`
+  const textW = tctx.measureText(name.toUpperCase()).width
+  const w = Math.ceil(textW + padding * 2)
+  const h = Math.ceil(fontSize * 1.6)
+  const canvas = document.createElement('canvas')
+  canvas.width  = w
+  canvas.height = h
+  const ctx = canvas.getContext('2d')
+  ctx.font          = `500 ${fontSize}px "Zalando Sans SemiExpanded", sans-serif`
+  ctx.fillStyle     = 'rgba(255, 255, 255, 0.82)'
+  ctx.textAlign     = 'center'
+  ctx.textBaseline  = 'middle'
+  ctx.letterSpacing = '0.08em'
+  ctx.fillText(name.toUpperCase(), w / 2, h / 2)
+  return { canvas, aspect: w / h }
+}
+
 // ─── CSS-style corner clip ────────────────────────────────────────────────────
 
 function clipRoundRect(ctx, w, h, r) {
@@ -161,9 +185,10 @@ export async function initScene(container) {
   controls.zoomSpeed       = 0.8
   controls.autoRotate      = false
 
-  // ─── Style state ─────────────────────────────────────────────────────────
+  // ─── Style state & name mesh ──────────────────────────────────────────────
   // corner: proportion of shorter side used as border-radius in canvas (0 = none)
   const style = { corner: 0.0 }
+  let nameMesh = null
 
   // ─── Load MYSCAPE assets in order ────────────────────────────────────────
   const assets = await Promise.all(LETTERS.map(url => loadSvg(url, style.corner)))
@@ -325,13 +350,36 @@ export async function initScene(container) {
     rafId = requestAnimationFrame(animate)
     if (!paused) {
       controls.update()
+      if (nameMesh) nameMesh.quaternion.copy(camera.quaternion)
       renderer.render(scene, camera)
     }
   }
   animate()
 
+  // ─── setScapeName — world-space billboard at origin ──────────────────────
+  function setScapeName(name) {
+    if (nameMesh) {
+      scene.remove(nameMesh)
+      nameMesh.geometry.dispose()
+      if (nameMesh.material.map) nameMesh.material.map.dispose()
+      nameMesh.material.dispose()
+      nameMesh = null
+    }
+    if (!name) return
+    const { canvas: tc, aspect } = renderNameToTexture(name)
+    const texture = new THREE.CanvasTexture(tc)
+    const w   = 2.5
+    const h   = w / aspect
+    const geo = new THREE.PlaneGeometry(w, h)
+    const mat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false })
+    nameMesh = new THREE.Mesh(geo, mat)
+    nameMesh.position.set(0, 0, 0)
+    scene.add(nameMesh)
+  }
+
   return {
     updateTextures,
+    setScapeName,
     setBackground(_hex) { /* background handled by body CSS; recorder sets clearColor directly */ },
     setStyle({ corner }) {
       if (corner !== undefined) style.corner = corner
@@ -359,6 +407,13 @@ export async function initScene(container) {
       cancelAnimationFrame(rafId)
       window.removeEventListener('resize', onResize)
       gsap.killTweensOf(particles.map(m => m.position))
+      if (nameMesh) {
+        scene.remove(nameMesh)
+        nameMesh.geometry.dispose()
+        if (nameMesh.material.map) nameMesh.material.map.dispose()
+        nameMesh.material.dispose()
+        nameMesh = null
+      }
       renderer.dispose()
       container.removeChild(renderer.domElement)
     },

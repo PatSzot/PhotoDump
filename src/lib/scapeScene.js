@@ -87,7 +87,7 @@ export function createScapeScene(canvas) {
 
   function disposeNameMesh() {
     if (!nameMesh) return
-    camera.remove(nameMesh)
+    scene.remove(nameMesh)
     nameMesh.geometry.dispose()
     if (nameMesh.material.map) nameMesh.material.map.dispose()
     nameMesh.material.dispose()
@@ -175,21 +175,20 @@ export function createScapeScene(canvas) {
     const { canvas: tc, aspect } = renderNameToTexture(name)
     const texture = new CanvasTexture(tc)
 
-    // Size: ~0.55 units wide in camera space at z=-2 (subtle caption scale)
-    const w   = 0.55
+    // Size: ~2.0 units wide in world space at origin
+    const w   = 2.0
     const h   = w / aspect
     const geo = new PlaneGeometry(w, h)
     const mat = new MeshBasicMaterial({
       map: texture, transparent: true,
-      depthTest: false, depthWrite: false,
+      depthWrite: false,
     })
 
     nameMesh = new Mesh(geo, mat)
-    nameMesh.renderOrder = 999
-    // Position bottom-center in camera space, 2 units ahead
-    nameMesh.position.set(0, 0, -2)
+    // Place at world-space origin so 3D depth sorting works naturally
+    nameMesh.position.set(0, 0, 0)
 
-    camera.add(nameMesh)
+    scene.add(nameMesh)
   }
 
   function tick(timestamp) {
@@ -210,6 +209,7 @@ export function createScapeScene(canvas) {
     }
 
     lastTimestamp = timestamp
+    if (nameMesh) nameMesh.quaternion.copy(camera.quaternion)
     renderer.render(scene, camera)
   }
 
