@@ -80,36 +80,8 @@ function loadSvg(url, corner = 0) {
   })
 }
 
-// ─── Meta overlay (for user photos) ──────────────────────────────────────────
-
-function drawMeta(ctx, w, h, { date, location } = {}) {
-  const lines = [location, date].filter(Boolean)
-  if (!lines.length) return
-
-  const fs    = Math.max(9,  Math.round(w * 0.031))
-  const pad   = Math.round(w * 0.048)
-  const lineH = Math.round(fs * 1.65)
-  const zone  = pad + lines.length * lineH
-
-  const grad = ctx.createLinearGradient(0, h - zone * 2.2, 0, h)
-  grad.addColorStop(0, 'rgba(0,0,0,0)')
-  grad.addColorStop(1, 'rgba(0,0,0,0.62)')
-  ctx.fillStyle = grad
-  ctx.fillRect(0, h - zone * 2.2, w, zone * 2.2)
-
-  ctx.font         = `500 ${fs}px "IBM Plex Mono", monospace`
-  ctx.fillStyle    = 'rgba(255,255,255,0.93)'
-  ctx.textAlign    = 'left'
-  ctx.textBaseline = 'bottom'
-  ctx.letterSpacing = '0.04em'
-
-  lines.forEach((line, i) => {
-    const y = h - Math.round(pad * 0.35) - (lines.length - 1 - i) * lineH
-    ctx.fillText(line.toUpperCase(), pad, y)
-  })
-}
-
 // ─── Photo texture loader (canvas-based — safe for blob URLs on iOS) ──────────
+// Metadata is drawn OUTSIDE the image, below it, left-aligned.
 
 async function loadAsTexture(url, meta = {}, corner = 0) {
   await document.fonts.ready
@@ -122,16 +94,42 @@ async function loadAsTexture(url, meta = {}, corner = 0) {
       const w     = Math.max(1, Math.round(img.naturalWidth  * scale))
       const h     = Math.max(1, Math.round(img.naturalHeight * scale))
 
+      const lines = [meta.location, meta.date].filter(Boolean)
+      const fs    = Math.max(9, Math.round(w * 0.031))
+      const lineH = Math.round(fs * 1.55)
+      const gap   = Math.round(fs * 0.7)   // vertical space between image bottom and text
+      const metaH = lines.length > 0 ? gap + lines.length * lineH : 0
+
       const canvas = document.createElement('canvas')
       canvas.width  = w
-      canvas.height = h
+      canvas.height = h + metaH
       const ctx = canvas.getContext('2d')
+
+      // Draw image with rounded corners — save/restore so the clip doesn't affect text
+      ctx.save()
       clipRoundRect(ctx, w, h, Math.round(Math.min(w, h) * corner))
       ctx.drawImage(img, 0, 0, w, h)
-      drawMeta(ctx, w, h, meta)
+      ctx.restore()
+
+      // Draw metadata below the image, left-aligned
+      if (lines.length > 0) {
+        ctx.font          = `500 ${fs}px "IBM Plex Mono", monospace`
+        ctx.fillStyle     = 'rgba(255, 255, 255, 0.9)'
+        ctx.textAlign     = 'left'
+        ctx.textBaseline  = 'top'
+        ctx.letterSpacing = '0.04em'
+        ctx.shadowColor   = 'rgba(0, 0, 0, 0.6)'
+        ctx.shadowBlur    = 4
+        ctx.shadowOffsetY = 1
+
+        lines.forEach((line, i) => {
+          ctx.fillText(line.toUpperCase(), 0, h + gap + i * lineH)
+        })
+      }
 
       const tex = new THREE.CanvasTexture(canvas)
-      resolve({ tex, aspect: img.naturalWidth / img.naturalHeight })
+      // Aspect uses the full canvas height (image + metadata area)
+      resolve({ tex, aspect: w / (h + metaH) })
     }
     img.onerror = () => resolve(null)
     img.src = url
