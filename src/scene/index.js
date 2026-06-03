@@ -139,8 +139,8 @@ async function loadAsTexture(url, meta = {}, corner = 0) {
 // ─── Scene ────────────────────────────────────────────────────────────────────
 
 export async function initScene(container) {
-  const W = window.innerWidth
-  const H = window.innerHeight
+  const W = container.offsetWidth  || window.innerWidth
+  const H = container.offsetHeight || window.innerHeight
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
@@ -311,13 +311,15 @@ export async function initScene(container) {
 
   // ─── Resize / render loop ─────────────────────────────────────────────────
 
-  function onResize() {
-    const w = window.innerWidth, h = window.innerHeight
-    camera.aspect = w / h
-    camera.updateProjectionMatrix()
-    renderer.setSize(w, h)
-  }
-  window.addEventListener('resize', onResize)
+  const ro = new ResizeObserver(entries => {
+    const { width: w, height: h } = entries[0].contentRect
+    if (w > 0 && h > 0) {
+      camera.aspect = w / h
+      camera.updateProjectionMatrix()
+      renderer.setSize(w, h)
+    }
+  })
+  ro.observe(container)
 
   let rafId
   let paused = false
@@ -357,7 +359,7 @@ export async function initScene(container) {
     },
     cleanup() {
       cancelAnimationFrame(rafId)
-      window.removeEventListener('resize', onResize)
+      ro.disconnect()
       gsap.killTweensOf(particles.map(m => m.position))
       renderer.dispose()
       container.removeChild(renderer.domElement)

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import exifr from 'exifr'
 import ScapeCanvas from './components/ScapeCanvas.jsx'
+import LandscapeCanvas from './components/LandscapeCanvas.jsx'
 import LeftPanel from './components/LeftPanel.jsx'
 import RightPanel from './components/RightPanel.jsx'
 import BottomBar from './components/BottomBar.jsx'
@@ -89,7 +90,7 @@ export default function App() {
   const [theme,           setTheme]           = useState('dark')
   const [corners,         setCorners]         = useState('sharp')
   const [scapeName,       setScapeName]       = useState('')
-  const [presetId,        setPresetId]        = useState('sphere')
+  const [presetId,        setPresetId]        = useState('landscape')
   const [controls,        setControls]        = useState(PRESETS['sphere'].defaults)
   const [duration,        setDuration]        = useState(10)
   const [aspectRatio,     setAspectRatio]     = useState('1:1')
@@ -248,34 +249,44 @@ export default function App() {
           borderLeft:  !VIEW_MODE ? `1px solid ${border}` : 'none',
           borderRight: !VIEW_MODE ? `1px solid ${border}` : 'none',
         }}>
-        <div className="scape-canvas-wrapper"
-          style={{ width: previewDims.width, height: previewDims.height }}>
-          <ScapeCanvas
-            ref={scapeCanvasRef}
-            photos={images.map(img => img.url)}
-            presetId={presetId}
-            controls={controls}
-            scapeName={scapeName}
-          />
-        </div>
 
-        {/* Upload prompt when empty */}
-        {!VIEW_MODE && images.length === 0 && (
+        {presetId === 'landscape' ? (
+          /* Landscape: original particle scatter fills the canvas area */
+          <LandscapeCanvas
+            ref={scapeCanvasRef}
+            images={images}
+          />
+        ) : (
+          /* Animation presets: constrained aspect-ratio box */
+          <div className="scape-canvas-wrapper"
+            style={{ width: previewDims.width, height: previewDims.height }}>
+            <ScapeCanvas
+              ref={scapeCanvasRef}
+              photos={images.map(img => img.url)}
+              presetId={presetId}
+              controls={controls}
+              scapeName={scapeName}
+            />
+          </div>
+        )}
+
+        {/* Upload prompt overlay when no photos and landscape selected */}
+        {!VIEW_MODE && images.length === 0 && presetId === 'landscape' && (
           <div
             onClick={() => photoInputRef.current?.click()}
             style={{
               position: 'absolute', inset: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer',
+              cursor: 'pointer', pointerEvents: 'none',
             }}
           >
             <div style={{
               fontFamily: '"IBM Plex Mono", monospace',
               fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase',
-              color: isDark ? 'rgba(240,237,228,0.2)' : 'rgba(26,26,24,0.18)',
+              color: isDark ? 'rgba(240,237,228,0.18)' : 'rgba(26,26,24,0.16)',
               userSelect: 'none',
             }}>
-              Upload photos to begin
+              Upload photos to replace letters
             </div>
           </div>
         )}

@@ -49,7 +49,8 @@ export default function LeftPanel({
       : controls[key].toFixed(2)
   }
 
-  const canExport = images.length > 0 && presetId !== 'explore' && !exporting
+  const isLandscape = presetId === 'landscape'
+  const canExport = images.length > 0 && presetId !== 'explore' && !isLandscape && !exporting
 
   return (
     <aside className="panel panel--left"
@@ -94,6 +95,22 @@ export default function LeftPanel({
       <section style={{ margin: '16px 0' }}>
         <Label>Preset</Label>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+
+          {/* Landscape — original particle scatter */}
+          <button onClick={() => onPresetChange('landscape')} style={{
+            background: presetId === 'landscape' ? rowBg : 'none',
+            border: 'none', cursor: 'pointer', textAlign: 'left',
+            fontFamily: MONO, fontSize: 11, letterSpacing: '0.06em',
+            color: presetId === 'landscape' ? text : muted,
+            padding: '6px 8px', borderRadius: 4,
+            transition: 'color 0.12s, background 0.12s',
+          }}>
+            LANDSCAPE
+          </button>
+
+          <div style={{ height: 1, background: divider, margin: '4px 0' }} />
+
+          {/* Animation presets */}
           {PRESET_IDS.map(id => (
             <button key={id} onClick={() => onPresetChange(id)} style={{
               background: presetId === id ? rowBg : 'none',
@@ -112,7 +129,7 @@ export default function LeftPanel({
       <Divider />
 
       {/* ── Composition sliders ────────────────────────────────────────── */}
-      {presetId !== 'explore' ? (
+      {!isLandscape && presetId !== 'explore' ? (
         <section style={{ margin: '16px 0' }}>
           <Label>Composition</Label>
           {SLIDERS.map(({ label, key, min, max, step }) => (
@@ -130,7 +147,7 @@ export default function LeftPanel({
             </div>
           ))}
         </section>
-      ) : (
+      ) : isLandscape ? null : (
         <section style={{ margin: '16px 0', fontFamily: MONO, fontSize: 10, lineHeight: 1.8, color: muted }}>
           Drag to explore<br />Scroll to zoom<br />Two-finger to pan
         </section>
@@ -158,7 +175,7 @@ export default function LeftPanel({
           fontFamily: MONO, fontSize: 10, letterSpacing: '0.09em',
           color: canExport ? text : muted,
           cursor: canExport ? 'pointer' : 'default',
-          opacity: (!images.length || presetId === 'explore') ? 0.38 : 1,
+          opacity: (!images.length || presetId === 'explore' || isLandscape) ? 0.38 : 1,
           transition: 'all 0.15s',
         }}>
           {exporting ? `EXPORTING… ${Math.round(exportProgress * 100)}%` : 'EXPORT MP4'}
