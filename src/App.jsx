@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import exifr from 'exifr'
 import LandscapeCanvas from './components/LandscapeCanvas.jsx'
+import ShuffleCanvas from './components/ShuffleCanvas.jsx'
 import LeftPanel from './components/LeftPanel.jsx'
 import RightPanel from './components/RightPanel.jsx'
 import ExportDock, { FORMATS } from './components/ExportDock.jsx'
@@ -83,9 +84,10 @@ const VIEW_MODE = _params.has('view') || !!SHARE_ID
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const photoInputRef = useRef(null)
-  const poolRef       = useRef([])
-  const sceneRef      = useRef(null)
+  const photoInputRef    = useRef(null)
+  const poolRef          = useRef([])
+  const sceneRef         = useRef(null)
+  const shuffleCanvasRef = useRef(null)
 
   // Core state
   const [images,  setImages]  = useState([])
@@ -102,7 +104,7 @@ export default function App() {
   const [loopS,        setLoopS]        = useState(8.0)
   const [presetId,     setPresetId]     = useState('sphere')
   const [exportControls, setExportControls] = useState({
-    count: 7, zoom: 1.0, radius: 1.0, scale: 1.0, corners: 0.08,
+    count: 7, zoom: 1.0, radius: 1.0, scale: 1.0, corners: 0.08, speed: 1.0,
   })
   const [isExporting,    setIsExporting]    = useState(false)
   const [exportPct,      setExportPct]      = useState(0)
@@ -138,7 +140,8 @@ export default function App() {
       if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target?.isContentEditable) return
       if (e.code === 'Space') {
         e.preventDefault()
-        sceneRef.current?.togglePause()
+        if (presetId === 'shuffle') shuffleCanvasRef.current?.togglePause()
+        else sceneRef.current?.togglePause()
       }
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
         e.preventDefault()
@@ -203,13 +206,17 @@ export default function App() {
 
   // ── Export video ───────────────────────────────────────────────────────────
   async function handleExport() {
-    const scene = sceneRef.current
-    if (!scene || isExporting || images.length === 0) return
+    if (isExporting || images.length === 0) return
+    const isShuffle      = presetId === 'shuffle'
+    const scene          = isShuffle ? null : sceneRef.current
+    const shuffleRenderer = isShuffle ? shuffleCanvasRef.current?.getRenderer() : null
+    if (!scene && !shuffleRenderer) return
     setIsExporting(true)
     setExportPct(0)
     try {
       await exportVideo({
         scene,
+        shuffleRenderer,
         fps,
         loopS,
         format: FORMATS[exportFormat].export,
@@ -226,8 +233,9 @@ export default function App() {
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
-  const panelBg = theme === 'dark' ? '#191812' : '#F0EDE4'
-  const isExport = mode === 'export'
+  const panelBg   = theme === 'dark' ? '#191812' : '#F0EDE4'
+  const isExport  = mode === 'export'
+  const showShuffle = isExport && presetId === 'shuffle'
 
   return (
     <div className={`app-layout${VIEW_MODE ? ' view-mode' : ''}`}
@@ -264,11 +272,23 @@ export default function App() {
       )}
 
       <div className="canvas-area">
-        <LandscapeCanvas
-          images={images}
-          corner={corner}
-          onSceneReady={scene => { sceneRef.current = scene }}
-        />
+        <div style={{ position: 'absolute', inset: 0, display: showShuffle ? 'none' : 'block' }}>
+          <LandscapeCanvas
+            images={images}
+            corner={corner}
+            onSceneReady={scene => { sceneRef.current = scene }}
+          />
+        </div>
+        {showShuffle && (
+          <div style={{ position: 'absolute', inset: 0 }}>
+            <ShuffleCanvas
+              ref={shuffleCanvasRef}
+              images={images}
+              cornerFraction={exportControls.corners}
+              speed={exportControls.speed}
+            />
+          </div>
+        )}
         {!VIEW_MODE && images.length === 0 && (
           <div
             onClick={() => photoInputRef.current?.click()}

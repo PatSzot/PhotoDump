@@ -522,6 +522,18 @@ kbd {
   flex-shrink: 0;
 }
 
+/* ─── Section hint ────────────────────────────────────────────────────────── */
+
+.ep-section-hint {
+  color: rgba(255,255,255,0.28);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  margin: 8px 0 0;
+  padding: 0 6px;
+}
+
 /* ─── Wide left panel (export mode) ───────────────────────────────────────── */
 
 .panel--left.panel--wide { width: 272px; }

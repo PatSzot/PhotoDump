@@ -1,25 +1,24 @@
 import { Output, CanvasSource, BufferTarget, Mp4OutputFormat } from 'mediabunny'
 
 /**
- * Export the current scene to an H.264 MP4 using WebCodecs VideoEncoder via Mediabunny.
- *
- * @param {object} opts
- * @param {object} opts.scene      - Scene controller returned by initScene
- * @param {number} opts.fps        - 30 or 60
- * @param {number} opts.loopS      - Loop duration in seconds
- * @param {{ w: number, h: number }} opts.format - Export resolution
- * @param {string} opts.bgColor    - CSS hex background color
- * @param {function} opts.onProgress - Called with 0→1 progress
+ * Export the current scene to an H.264 MP4.
+ * Pass `shuffleRenderer` for the Shuffle preset (frame-perfect 2D canvas export).
+ * Pass `scene` for all Three.js presets (real-time capture).
  */
-export async function exportVideo({ scene, fps, loopS, format, bgColor, onProgress }) {
+export async function exportVideo({ scene, shuffleRenderer, fps, loopS, format, bgColor, onProgress }) {
   if (typeof VideoEncoder === 'undefined') {
     throw new Error('VideoEncoder API not available. Use Chrome 94+, Edge 94+, or Firefox 130+.')
   }
 
-  const canvas = scene.getCanvas()
+  if (shuffleRenderer) {
+    return exportShuffle({ shuffleRenderer, fps, loopS, format, bgColor, onProgress })
+  }
+
+  // ── Three.js path: real-time frame capture ──────────────────────────────────
+
+  const canvas   = scene.getCanvas()
   const origSize = scene.getContainerSize()
 
-  // Configure renderer for export resolution
   scene.setBgColor(bgColor)
   scene.resize(format.w, format.h)
   scene.pauseLoop()
@@ -46,8 +45,7 @@ export async function exportVideo({ scene, fps, loopS, format, bgColor, onProgre
 
   try {
     for (let p = 0; p < totalFrames; p++) {
-      // Wait until wall-clock time matches this frame's target time
-      // (ensures animation plays at correct speed)
+      // Wait until wall-clock matches this frame's target time
       const targetMs = (p / fps) * 1000
       await new Promise(resolve => {
         function check() {
@@ -57,32 +55,81 @@ export async function exportVideo({ scene, fps, loopS, format, bgColor, onProgre
         requestAnimationFrame(check)
       })
 
-      // Render the scene for this frame (GSAP has ticked naturally)
       scene.renderFrame()
-
-      // Encode this frame
       await canvasSource.add(p / fps, 1 / fps)
-
       onProgress?.((p + 1) / totalFrames)
     }
 
     canvasSource.close()
     await output.finalize()
 
-    // Download the MP4
     const blob = new Blob([target.buffer], { type: 'video/mp4' })
-    const url  = URL.createObjectURL(blob)
     const a    = document.createElement('a')
-    a.href     = url
+    a.href     = URL.createObjectURL(blob)
     a.download = `myscape-${format.w}x${format.h}.mp4`
     a.click()
-    URL.revokeObjectURL(url)
+    URL.revokeObjectURL(a.href)
 
   } finally {
-    // Always restore scene state
     scene.resize(origSize.width, origSize.height)
     scene.restoreBgColor()
     scene.resumeLoop()
     canvas.style.visibility = ''
+  }
+}
+
+// ── Shuffle path: frame-perfect 2D canvas export ─────────────────────────────
+
+async function exportShuffle({ shuffleRenderer, fps, loopS, format, bgColor, onProgress }) {
+  // Pause + stop the live animation loop
+  shuffleRenderer.pause()
+  shuffleRenderer.stop()
+  shuffleRenderer.reset()
+
+  // Off-screen canvas at export resolution (doesn't touch the live canvas)
+  const exportCanvas    = document.createElement('canvas')
+  exportCanvas.width    = format.w
+  exportCanvas.height   = format.h
+
+  const target = new BufferTarget()
+  const output = new Output({
+    format: new Mp4OutputFormat({ fastStart: 'in-memory' }),
+    target,
+  })
+
+  const canvasSource = new CanvasSource(exportCanvas, {
+    codec: 'avc',
+    bitrate: 24_000_000,
+    bitrateMode: 'variable',
+    latencyMode: 'quality',
+  })
+
+  output.addVideoTrack(canvasSource)
+  await output.start()
+
+  const totalFrames = Math.round(loopS * fps)
+
+  try {
+    for (let p = 0; p < totalFrames; p++) {
+      // Advance animation clock by exactly 1 frame and render to exportCanvas
+      shuffleRenderer.stepFrame(fps, exportCanvas, bgColor)
+      await canvasSource.add(p / fps, 1 / fps)
+      onProgress?.((p + 1) / totalFrames)
+    }
+
+    canvasSource.close()
+    await output.finalize()
+
+    const blob = new Blob([target.buffer], { type: 'video/mp4' })
+    const a    = document.createElement('a')
+    a.href     = URL.createObjectURL(blob)
+    a.download = `myscape-shuffle-${format.w}x${format.h}.mp4`
+    a.click()
+    URL.revokeObjectURL(a.href)
+
+  } finally {
+    // Restart the live animation
+    shuffleRenderer.start()
+    shuffleRenderer.resume()
   }
 }

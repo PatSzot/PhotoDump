@@ -4,10 +4,11 @@ import LoopTimeline from '../components/LoopTimeline.jsx'
 import '../styles/export.css'
 
 const PRESETS = [
-  { key: 'sphere', label: 'Sphere' },
-  { key: 'ring',   label: 'Ring'   },
-  { key: 'helix',  label: 'Helix'  },
-  { key: 'flow',   label: 'Flow'   },
+  { key: 'sphere',  label: 'Sphere'  },
+  { key: 'ring',    label: 'Ring'    },
+  { key: 'helix',   label: 'Helix'   },
+  { key: 'flow',    label: 'Flow'    },
+  { key: 'shuffle', label: 'Shuffle' },
 ]
 
 export default function ExportPanel({
@@ -19,6 +20,8 @@ export default function ExportPanel({
   function setCtrl(key, val) {
     onControlsChange({ ...controls, [key]: val })
   }
+
+  const isShuffle = presetId === 'shuffle'
 
   return (
     <div>
@@ -63,14 +66,29 @@ export default function ExportPanel({
       {/* Composition */}
       <h3 className="ep-section">Composition</h3>
       <div className="ep-panel">
-        <NumberField label="Count"   value={controls.count}   min={1}   max={100} step={1}    onChange={v => setCtrl('count', v)} />
-        <NumberField label="Zoom"    value={controls.zoom}    min={0.4} max={3}   step={0.05} onChange={v => setCtrl('zoom', v)} />
-        {presetId !== 'flow' && (
+        {!isShuffle && (
+          <NumberField label="Count"  value={controls.count}  min={1}   max={100} step={1}    onChange={v => setCtrl('count', v)} />
+        )}
+        {!isShuffle && (
+          <NumberField label="Zoom"   value={controls.zoom}   min={0.4} max={3}   step={0.05} onChange={v => setCtrl('zoom', v)} />
+        )}
+        {!isShuffle && presetId !== 'flow' && (
           <NumberField label="Radius" value={controls.radius} min={0.3} max={3}   step={0.05} onChange={v => setCtrl('radius', v)} />
         )}
-        <NumberField label="Scale"   value={controls.scale}   min={0.2} max={2}   step={0.05} onChange={v => setCtrl('scale', v)} />
-        <NumberField label="Corners" value={controls.corners} min={0}   max={0.5} step={0.01} onChange={v => setCtrl('corners', v)} />
+        {!isShuffle && (
+          <NumberField label="Scale"  value={controls.scale}  min={0.2} max={2}   step={0.05} onChange={v => setCtrl('scale', v)} />
+        )}
+        <NumberField label="Corners" value={controls.corners} min={0} max={0.5} step={0.01} onChange={v => setCtrl('corners', v)} />
+        {isShuffle && (
+          <NumberField label="Speed"  value={controls.speed}  min={0.2} max={4}   step={0.1}  onChange={v => setCtrl('speed', v)} />
+        )}
       </div>
+
+      {isShuffle && (
+        <p className="ep-section-hint">
+          Each photo gets one card slot. Both stacks cycle through all photos.
+        </p>
+      )}
 
       {/* Video Length */}
       <h3 className="ep-section">Video Length</h3>
