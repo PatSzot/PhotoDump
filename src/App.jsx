@@ -1,9 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import exifr from 'exifr'
-import { initScene } from './scene/index.js'
-import UploadPanel from './ui/UploadPanel.jsx'
+import ScapeCanvas from './components/ScapeCanvas.jsx'
+import LeftPanel from './components/LeftPanel.jsx'
+import RightPanel from './components/RightPanel.jsx'
+import BottomBar from './components/BottomBar.jsx'
+import { PRESETS } from './lib/presets.js'
+import { exportVideo } from './lib/exporter.js'
+import './styles/layout.css'
 
-// ─── EXIF helpers ─────────────────────────────────────────────────────────────
+// ─── EXIF helper ──────────────────────────────────────────────────────────────
 
 async function readMeta(file) {
   try {
@@ -32,14 +37,11 @@ async function readMeta(file) {
   }
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Image compression (for share uploads) ────────────────────────────────────
 
-// Compress a blob/object URL to a JPEG data URL at max 1024px (keeps uploads small)
 function compressImageToDataUrl(url) {
   return new Promise((resolve, reject) => {
     const img = new Image()
-    // Do NOT set crossOrigin for blob URLs — they are same-origin and don't support
-    // CORS mode; setting it causes silent load failures on iOS Safari.
     img.onload = () => {
       const MAX = 1024
       const scale = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight, 1))
@@ -55,182 +57,242 @@ function compressImageToDataUrl(url) {
   })
 }
 
-// ─── App ──────────────────────────────────────────────────────────────────────
+// ─── Preview dimensions ───────────────────────────────────────────────────────
+
+function getPreviewDimensions(aspectRatio, containerW, containerH) {
+  const padding = 40
+  const w = Math.max(1, containerW - padding * 2)
+  const h = Math.max(1, containerH - padding * 2)
+  const ratios = { '1:1': 1, '9:16': 9 / 16, '16:9': 16 / 9 }
+  const ratio  = ratios[aspectRatio] ?? 1
+  if (w / h > ratio) {
+    return { width: Math.round(h * ratio), height: h }
+  }
+  return { width: w, height: Math.round(w / ratio) }
+}
+
+// ─── Route flags ──────────────────────────────────────────────────────────────
 
 const _params   = new URLSearchParams(window.location.search)
 const SHARE_ID  = _params.get('s')
 const VIEW_MODE = _params.has('view') || !!SHARE_ID
 
-export default function App() {
-  const containerRef = useRef(null)
-  const sceneRef     = useRef(null)
-  const poolRef      = useRef([])            // { url, meta }[] — source of truth
-  const [images,   setImages]   = useState([])
-  const [progress, setProgress] = useState(null)
-  const [theme,          setTheme]          = useState('light')
-  const [corners,        setCorners]        = useState('sharp')
-  const [scapeName,      setScapeName]      = useState('')
+// ─── App ──────────────────────────────────────────────────────────────────────
 
+export default function App() {
+  const scapeCanvasRef = useRef(null)
+  const canvasAreaRef  = useRef(null)
+  const photoInputRef  = useRef(null)
+  const poolRef        = useRef([])
+
+  const [images,          setImages]          = useState([])
+  const [theme,           setTheme]           = useState('dark')
+  const [corners,         setCorners]         = useState('sharp')
+  const [scapeName,       setScapeName]       = useState('')
+  const [presetId,        setPresetId]        = useState('sphere')
+  const [controls,        setControls]        = useState(PRESETS['sphere'].defaults)
+  const [duration,        setDuration]        = useState(10)
+  const [aspectRatio,     setAspectRatio]     = useState('1:1')
+  const [exportSize,      setExportSize]      = useState({ width: 1080, height: 1080 })
+  const [previewDims,     setPreviewDims]     = useState({ width: 400, height: 400 })
+  const [exporting,       setExporting]       = useState(false)
+  const [exportProgress,  setExportProgress]  = useState(0)
+
+  // ── Body background ────────────────────────────────────────────────────────
   useEffect(() => {
-    document.body.style.background = theme === 'dark' ? '#191812' : '#F5F3EC'
+    document.body.style.background = theme === 'dark' ? '#191812' : '#F0EDE4'
   }, [theme])
 
+  // ── Load shared scape ──────────────────────────────────────────────────────
   useEffect(() => {
-    let mounted = true
-    initScene(containerRef.current).then(async scene => {
-      if (!mounted) { scene.cleanup(); return }
-      sceneRef.current = scene
-
-      if (SHARE_ID) {
-        try {
-          const res = await fetch(`/api/share?id=${SHARE_ID}`)
-          if (!res.ok) throw new Error(`API ${res.status}`)
-          const { images = [], settings = {} } = await res.json()
-
-          if (!mounted) return
-
-          // Restore settings
-          if (settings.theme && settings.theme !== 'light') {
-            setTheme(settings.theme)
-          }
-          if (settings.corners === 'rounded') {
-            setCorners('rounded')
-            scene.setStyle({ corner: 0.12 })
-          }
-          if (settings.name) setScapeName(settings.name)
-
-          // Load images
-          if (images.length > 0) {
-            poolRef.current = images
-            setImages([...images])
-            setProgress({ done: 0, total: images.length })
-            scene.updateTextures(images, (done, total) => {
-              setProgress({ done, total })
-              if (done === total) setTimeout(() => setProgress(null), 800)
-            })
-          }
-        } catch (err) {
-          console.error('Failed to load shared scape:', err)
+    if (!SHARE_ID) return
+    fetch(`/api/share?id=${SHARE_ID}`)
+      .then(r => r.ok ? r.json() : Promise.reject(new Error(`API ${r.status}`)))
+      .then(({ images: imgs = [], settings = {} }) => {
+        if (settings.theme)   setTheme(settings.theme)
+        if (settings.corners) setCorners(settings.corners)
+        if (settings.name)    setScapeName(settings.name)
+        if (imgs.length > 0) {
+          poolRef.current = imgs
+          setImages([...imgs])
         }
-      }
-    })
-    return () => {
-      mounted = false
-      sceneRef.current?.cleanup()
-    }
+      })
+      .catch(err => console.error('Failed to load shared scape:', err))
   }, [])
 
-  function applyPool(next, showProgress = true) {
+  // ── Preview dimensions (recompute on container or aspect ratio change) ─────
+  useEffect(() => {
+    const el = canvasAreaRef.current
+    if (!el) return
+    const compute = () =>
+      setPreviewDims(getPreviewDimensions(aspectRatio, el.offsetWidth, el.offsetHeight))
+    compute()
+    const ro = new ResizeObserver(compute)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [aspectRatio])
+
+  // ── Photo pool helpers ─────────────────────────────────────────────────────
+  function applyPool(next) {
     poolRef.current = next
     setImages([...next])
-
-    if (showProgress) {
-      setProgress({ done: 0, total: next.length })
-      sceneRef.current.updateTextures(next, (done, total) => {
-        setProgress({ done, total })
-        if (done === total) setTimeout(() => setProgress(null), 800)
-      })
-    } else {
-      sceneRef.current.updateTextures(next)
-    }
   }
 
   async function handleLoad(files) {
-    // Read EXIF in parallel, then create blob URLs
     const metas = await Promise.all(files.map(readMeta))
-    const newImages = files.map((f, i) => ({
-      url:  URL.createObjectURL(f),
-      meta: metas[i],
-    }))
-    applyPool([...poolRef.current, ...newImages], true)
+    const fresh = files.map((f, i) => ({ url: URL.createObjectURL(f), meta: metas[i] }))
+    applyPool([...poolRef.current, ...fresh])
   }
 
-  function handleThemeChange(t) {
-    setTheme(t)
-    document.body.style.background = t === 'dark' ? '#191812' : '#F5F3EC'
-    sceneRef.current?.setBackground(t === 'dark' ? 0x191812 : 0xF5F3EC)
+  function handleDelete(url) {
+    URL.revokeObjectURL(url)
+    applyPool(poolRef.current.filter(img => img.url !== url))
   }
 
+  function handlePresetChange(id) {
+    setPresetId(id)
+    setControls(PRESETS[id].defaults)
+  }
 
+  // ── Share link ─────────────────────────────────────────────────────────────
   async function handleCopyLink() {
-    // Compress images to JPEG at max 1024px before upload
     const entries = await Promise.all(
       poolRef.current.map(async ({ url, meta }) => ({
         dataUrl: await compressImageToDataUrl(url),
         meta,
       }))
     )
-
     const res = await fetch('/api/share', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        entries,
-        settings: { theme, corners, name: scapeName },
-      }),
+      body: JSON.stringify({ entries, settings: { theme, corners, name: scapeName } }),
     })
-
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
       throw new Error(err.error || `Upload failed (${res.status})`)
     }
-
     const { id } = await res.json()
     return `${window.location.origin}/?view&s=${id}`
   }
 
-  function handleCornersChange(v) {
-    setCorners(v)
-    sceneRef.current?.setStyle({ corner: v === 'rounded' ? 0.12 : 0.0 })
-    if (poolRef.current.length > 0) {
-      applyPool(poolRef.current, false)
-    } else {
-      sceneRef.current?.reloadDefaults()
+  // ── Video export ───────────────────────────────────────────────────────────
+  async function handleExport() {
+    const scene = scapeCanvasRef.current?.getScene()
+    if (!scene || exporting) return
+    setExporting(true)
+    setExportProgress(0)
+    try {
+      await exportVideo({
+        sceneController: scene,
+        scapeName,
+        durationSeconds: duration,
+        canvasSize: exportSize,
+        presetId,
+        onProgress: p => setExportProgress(p),
+      })
+    } catch (err) {
+      alert(
+        err.message === 'NO_MEDIARECORDER'
+          ? 'Video export requires Chrome, Firefox, or Edge.'
+          : (err.message || 'Export failed.')
+      )
+    } finally {
+      setExporting(false)
+      setExportProgress(0)
     }
   }
 
-  function handleDelete(url) {
-    URL.revokeObjectURL(url)
-    const next = poolRef.current.filter(img => img.url !== url)
-    applyPool(next, false)
-  }
+  // ── Render ─────────────────────────────────────────────────────────────────
+  const isDark  = theme === 'dark'
+  const panelBg = isDark ? '#191812' : '#F0EDE4'
+  const border  = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'
 
   return (
-    <>
-      {/* Name sits behind the canvas */}
-      {scapeName && (
-        <div style={{
-          position: 'fixed', top: '50%', left: '50%',
-          transform: 'translate(-50%, -50%)',
-          fontSize: 'clamp(14px, 2vw, 22px)',
-          fontFamily: "'Zalando Sans SemiExpanded', sans-serif",
-          fontWeight: 900,
-          color: theme === 'dark' ? '#f0ede4' : '#000000',
-          pointerEvents: 'none',
-          userSelect: 'none',
-          zIndex: 0,
-          whiteSpace: 'nowrap',
-        }}>
-          {scapeName}
-        </div>
+    <div className={`app-layout${VIEW_MODE ? ' view-mode' : ''}`}
+      style={{ background: panelBg }}>
+
+      {/* Hidden file input */}
+      <input
+        ref={photoInputRef} type="file" accept="image/*" multiple
+        onChange={e => {
+          const files = Array.from(e.target.files ?? [])
+            .filter(f => f.type.startsWith('image/'))
+            .slice(0, 100)
+          if (files.length) handleLoad(files)
+          e.target.value = ''
+        }}
+        style={{ position: 'fixed', top: -200, opacity: 0, width: 1, height: 1, pointerEvents: 'none' }}
+      />
+
+      {/* Left panel */}
+      {!VIEW_MODE && (
+        <LeftPanel
+          theme={theme}           onThemeChange={setTheme}
+          corners={corners}       onCornersChange={setCorners}
+          scapeName={scapeName}   onScapeNameChange={setScapeName}
+          presetId={presetId}     controls={controls}
+          onPresetChange={handlePresetChange}
+          onControlsChange={setControls}
+          duration={duration}     onDurationChange={setDuration}
+          images={images}
+          onUploadClick={() => photoInputRef.current?.click()}
+          onDelete={handleDelete}
+          exporting={exporting}   exportProgress={exportProgress}
+          onExport={handleExport}
+        />
       )}
 
-      {/* Canvas sits above — transparent background lets name show through */}
-      <div ref={containerRef} style={{ position: 'relative', zIndex: 1, width: '100vw', height: '100vh', overflow: 'hidden' }} />
+      {/* Center canvas */}
+      <div ref={canvasAreaRef} className="canvas-area"
+        style={{
+          borderLeft:  !VIEW_MODE ? `1px solid ${border}` : 'none',
+          borderRight: !VIEW_MODE ? `1px solid ${border}` : 'none',
+        }}>
+        <div className="scape-canvas-wrapper"
+          style={{ width: previewDims.width, height: previewDims.height }}>
+          <ScapeCanvas
+            ref={scapeCanvasRef}
+            photos={images.map(img => img.url)}
+            presetId={presetId}
+            controls={controls}
+            scapeName={scapeName}
+          />
+        </div>
 
-      {!VIEW_MODE && <UploadPanel
-        onLoad={handleLoad}
-        onDelete={handleDelete}
-        images={images}
-        progress={progress}
+        {/* Upload prompt when empty */}
+        {!VIEW_MODE && images.length === 0 && (
+          <div
+            onClick={() => photoInputRef.current?.click()}
+            style={{
+              position: 'absolute', inset: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <div style={{
+              fontFamily: '"IBM Plex Mono", monospace',
+              fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase',
+              color: isDark ? 'rgba(240,237,228,0.2)' : 'rgba(26,26,24,0.18)',
+              userSelect: 'none',
+            }}>
+              Upload photos to begin
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Right panel */}
+      {!VIEW_MODE && <RightPanel theme={theme} />}
+
+      {/* Bottom bar */}
+      <BottomBar
+        aspectRatio={aspectRatio}
+        onAspectChange={(value, size) => { setAspectRatio(value); setExportSize(size) }}
+        onShare={handleCopyLink}
+        hasPhotos={images.length > 0}
         theme={theme}
-        onThemeChange={handleThemeChange}
-        corners={corners}
-        onCornersChange={handleCornersChange}
-        onCopyLink={handleCopyLink}
-        scapeName={scapeName}
-        onScapeNameChange={setScapeName}
-      />}
-    </>
+      />
+
+    </div>
   )
 }

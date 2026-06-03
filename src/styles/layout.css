@@ -1,0 +1,63 @@
+/* ── Grid shell ───────────────────────────────────────────────────────────── */
+
+.app-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr 240px;
+  grid-template-rows: 1fr 52px;
+  grid-template-areas:
+    "left  canvas right"
+    "bar   bar    bar";
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-layout.view-mode {
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "canvas"
+    "bar";
+}
+
+/* ── Panels ───────────────────────────────────────────────────────────────── */
+
+.panel {
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel--left  { grid-area: left; }
+.panel--right { grid-area: right; }
+
+/* ── Canvas area ──────────────────────────────────────────────────────────── */
+
+.canvas-area {
+  grid-area: canvas;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.scape-canvas-wrapper {
+  position: relative;
+  transition: width 0.3s ease, height 0.3s ease;
+}
+
+/* ── Bottom bar ───────────────────────────────────────────────────────────── */
+
+.bottom-bar {
+  grid-area: bar;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 12px;
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────────────────── */
+
+.panel::-webkit-scrollbar { width: 3px; }
+.panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
