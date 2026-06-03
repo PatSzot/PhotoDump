@@ -58,6 +58,25 @@ function compressImageToDataUrl(url) {
   })
 }
 
+// ─── Image rotation ───────────────────────────────────────────────────────────
+
+function rotateImage90(url) {
+  return new Promise(resolve => {
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width  = img.naturalHeight
+      canvas.height = img.naturalWidth
+      const ctx = canvas.getContext('2d')
+      ctx.translate(canvas.width / 2, canvas.height / 2)
+      ctx.rotate(Math.PI / 2)
+      ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2)
+      canvas.toBlob(blob => resolve(URL.createObjectURL(blob)), 'image/jpeg', 0.92)
+    }
+    img.src = url
+  })
+}
+
 // ─── Preview dimensions ───────────────────────────────────────────────────────
 
 function getPreviewDimensions(aspectRatio, containerW, containerH) {
@@ -150,6 +169,16 @@ export default function App() {
     applyPool(poolRef.current.filter(img => img.url !== url))
   }
 
+  async function handleRotate(url) {
+    const idx = poolRef.current.findIndex(img => img.url === url)
+    if (idx === -1) return
+    const rotated = await rotateImage90(url)
+    URL.revokeObjectURL(url)
+    const next = [...poolRef.current]
+    next[idx] = { ...next[idx], url: rotated }
+    applyPool(next)
+  }
+
   function handlePresetChange(id) {
     setPresetId(id)
     setControls(PRESETS[id].defaults)
@@ -238,6 +267,7 @@ export default function App() {
           images={images}
           onUploadClick={() => photoInputRef.current?.click()}
           onDelete={handleDelete}
+          onRotate={handleRotate}
           exporting={exporting}   exportProgress={exportProgress}
           onExport={handleExport}
           onShare={handleCopyLink}
@@ -252,6 +282,7 @@ export default function App() {
           <LandscapeCanvas
             ref={scapeCanvasRef}
             images={images}
+            corner={corners === 'rounded' ? 0.07 : 0.0}
           />
         ) : (
           /* Animation presets: constrained aspect-ratio box */

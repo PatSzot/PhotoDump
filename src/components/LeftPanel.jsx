@@ -26,7 +26,7 @@ export default function LeftPanel({
   presetId, controls, onPresetChange, onControlsChange,
   duration, onDurationChange,
   aspectRatio, onAspectChange,
-  images, onUploadClick, onDelete,
+  images, onUploadClick, onDelete, onRotate,
   exporting, exportProgress, onExport,
   onShare,
 }) {
@@ -44,7 +44,7 @@ export default function LeftPanel({
   const toggleOff = isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)'
 
   const isLandscape = presetId === 'landscape'
-  const canExport   = images.length > 0 && presetId !== 'explore' && !isLandscape && !exporting
+  const canExport   = images.length > 0 && !isLandscape && !exporting
   const canShare    = images.length > 0 && !copying
 
   async function handleShare() {
@@ -116,6 +116,9 @@ export default function LeftPanel({
                   <span style={{ flex: 1, fontFamily: MONO, fontSize: 9, color: muted, letterSpacing: '0.04em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {meta?.date ? meta.date.toUpperCase() : `PHOTO ${i + 1}`}
                   </span>
+                  <button onClick={() => onRotate(url)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: muted, padding: '2px 3px', lineHeight: 1 }}>
+                    <i className="ri-arrow-right-circle-line" style={{ fontSize: 11 }} />
+                  </button>
                   <button onClick={() => onDelete(url)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: muted, padding: '2px 3px', lineHeight: 1 }}>
                     <i className="ri-close-line" style={{ fontSize: 11 }} />
                   </button>
@@ -165,18 +168,23 @@ export default function LeftPanel({
         <section style={{ margin: '16px 0' }}>
           <Label>Preset</Label>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <PresetBtn id="landscape" label="LANDSCAPE" active={presetId === 'landscape'} rowBg={rowBg} text={text} muted={muted} onSelect={onPresetChange} />
-            <div style={{ height: 1, background: divider, margin: '4px 0' }} />
-            {PRESET_IDS.map(id => (
-              <PresetBtn key={id} id={id} label={PRESETS[id].label} active={presetId === id} rowBg={rowBg} text={text} muted={muted} onSelect={onPresetChange} />
-            ))}
+            {['landscape', 'sphere', 'ring', 'helix'].map(id => (
+            <PresetBtn
+              key={id}
+              id={id}
+              label={id === 'landscape' ? 'LANDSCAPE' : PRESETS[id].label}
+              active={presetId === id}
+              rowBg={rowBg} text={text} muted={muted}
+              onSelect={onPresetChange}
+            />
+          ))}
           </div>
         </section>
 
         <Divider />
 
         {/* Composition */}
-        {!isLandscape && presetId !== 'explore' ? (
+        {!isLandscape && (
           <section style={{ margin: '16px 0' }}>
             <Label>Composition</Label>
             {SLIDERS.map(({ label, key, min, max, step }) => (
@@ -192,11 +200,7 @@ export default function LeftPanel({
               </div>
             ))}
           </section>
-        ) : !isLandscape ? (
-          <section style={{ margin: '16px 0', fontFamily: MONO, fontSize: 10, lineHeight: 1.8, color: muted }}>
-            Drag to explore<br />Scroll to zoom<br />Two-finger to pan
-          </section>
-        ) : null}
+        )}
 
         <Divider />
 
@@ -244,7 +248,7 @@ export default function LeftPanel({
             fontFamily: MONO, fontSize: 10, letterSpacing: '0.09em',
             color: canExport ? text : muted,
             cursor: canExport ? 'pointer' : 'default',
-            opacity: (!images.length || presetId === 'explore' || isLandscape) ? 0.35 : 1,
+            opacity: (!images.length || isLandscape) ? 0.35 : 1,
             transition: 'all 0.15s',
           }}>
             {exporting ? `EXPORTING… ${Math.round(exportProgress * 100)}%` : 'EXPORT MP4'}
