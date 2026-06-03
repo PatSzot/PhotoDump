@@ -1,29 +1,34 @@
-const MONO = '"IBM Plex Mono", monospace'
+const MONO     = '"IBM Plex Mono", monospace'
+const HEADLINE = '"Zalando Sans SemiExpanded", sans-serif'
 
 export default function RightPanel({ theme }) {
-  const isDark  = theme === 'dark'
-  const muted   = isDark ? 'rgba(240,237,228,0.38)' : 'rgba(26,26,24,0.35)'
-  const bg      = isDark ? '#191812' : '#F0EDE4'
-  const border  = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'
+  const isDark = theme === 'dark'
+  const text   = isDark ? '#f0ede4' : '#1a1a18'
+  const muted  = isDark ? 'rgba(240,237,228,0.38)' : 'rgba(26,26,24,0.35)'
+  const bg     = isDark ? '#191812' : '#F0EDE4'
 
   return (
     <aside className="panel panel--right"
-      style={{ background: bg, borderLeft: `1px solid ${border}`, padding: '18px 16px' }}>
+      style={{ background: bg, padding: '18px 16px', overflow: 'hidden' }}>
 
-      <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: '0.13em', color: muted, textTransform: 'uppercase', marginBottom: 12 }}>
-        About
-      </div>
+      <div className="panel-scroll" style={{ flex: 1, overflowY: 'auto' }}>
+        <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: '0.13em', color: muted, textTransform: 'uppercase', marginBottom: 16 }}>
+          About
+        </div>
 
-      <div style={{ fontFamily: MONO, fontSize: 10, lineHeight: 1.9, color: muted }}>
-        MYSCAPE<br />
-        A personal photo viewer<br />
-        built with Three.js.<br />
-        <br />
-        Upload your photos and<br />
-        watch them float in space.<br />
-        <br />
-        Choose a preset, adjust<br />
-        composition, export MP4.
+        <div style={{ fontFamily: HEADLINE, fontSize: 18, fontWeight: 600, color: text, letterSpacing: '-0.01em', lineHeight: 1.25, marginBottom: 16 }}>
+          My Scape.
+        </div>
+
+        <div style={{ fontFamily: MONO, fontSize: 10, lineHeight: 1.85, color: muted }}>
+          A fun way to share, explore,<br />
+          and view your photos.<br />
+          <br />
+          Upload your photos.<br />
+          Choose a preset and share<br />
+          as a link or video for<br />
+          social media.
+        </div>
       </div>
 
     </aside>

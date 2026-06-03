@@ -4,7 +4,7 @@ import ScapeCanvas from './components/ScapeCanvas.jsx'
 import LandscapeCanvas from './components/LandscapeCanvas.jsx'
 import LeftPanel from './components/LeftPanel.jsx'
 import RightPanel from './components/RightPanel.jsx'
-import BottomBar from './components/BottomBar.jsx'
+
 import { PRESETS } from './lib/presets.js'
 import { exportVideo } from './lib/exporter.js'
 import './styles/layout.css'
@@ -204,9 +204,7 @@ export default function App() {
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
-  const isDark  = theme === 'dark'
-  const panelBg = isDark ? '#191812' : '#F0EDE4'
-  const border  = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'
+  const panelBg = theme === 'dark' ? '#191812' : '#F0EDE4'
 
   return (
     <div className={`app-layout${VIEW_MODE ? ' view-mode' : ''}`}
@@ -235,20 +233,19 @@ export default function App() {
           onPresetChange={handlePresetChange}
           onControlsChange={setControls}
           duration={duration}     onDurationChange={setDuration}
+          aspectRatio={aspectRatio}
+          onAspectChange={(value, size) => { setAspectRatio(value); setExportSize(size) }}
           images={images}
           onUploadClick={() => photoInputRef.current?.click()}
           onDelete={handleDelete}
           exporting={exporting}   exportProgress={exportProgress}
           onExport={handleExport}
+          onShare={handleCopyLink}
         />
       )}
 
       {/* Center canvas */}
-      <div ref={canvasAreaRef} className="canvas-area"
-        style={{
-          borderLeft:  !VIEW_MODE ? `1px solid ${border}` : 'none',
-          borderRight: !VIEW_MODE ? `1px solid ${border}` : 'none',
-        }}>
+      <div ref={canvasAreaRef} className="canvas-area">
 
         {presetId === 'landscape' ? (
           /* Landscape: original particle scatter fills the canvas area */
@@ -283,7 +280,7 @@ export default function App() {
             <div style={{
               fontFamily: '"IBM Plex Mono", monospace',
               fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase',
-              color: isDark ? 'rgba(240,237,228,0.18)' : 'rgba(26,26,24,0.16)',
+              color: theme === 'dark' ? 'rgba(240,237,228,0.18)' : 'rgba(26,26,24,0.16)',
               userSelect: 'none',
             }}>
               Upload photos to replace letters
@@ -294,15 +291,6 @@ export default function App() {
 
       {/* Right panel */}
       {!VIEW_MODE && <RightPanel theme={theme} />}
-
-      {/* Bottom bar */}
-      <BottomBar
-        aspectRatio={aspectRatio}
-        onAspectChange={(value, size) => { setAspectRatio(value); setExportSize(size) }}
-        onShare={handleCopyLink}
-        hasPhotos={images.length > 0}
-        theme={theme}
-      />
 
     </div>
   )
