@@ -2,9 +2,9 @@
 
 .app-layout {
   display: grid;
-  grid-template-columns: 1fr 240px;
+  grid-template-columns: 1fr;
   grid-template-rows: 1fr;
-  grid-template-areas: "canvas right";
+  grid-template-areas: "canvas";
   width: 100vw;
   height: 100vh;
   overflow: hidden;
@@ -72,9 +72,28 @@
   pointer-events: none;
 }
 
-/* ─── Right panel ────────────────────────────────────────────────────────── */
+/* ─── Right panel: floating frosted-glass card, bottom-right ─────────────── */
 
-.panel--right { grid-area: right; }
+.panel--right {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 100;
+  width: 200px;
+
+  background: rgba(18, 18, 16, 0.82);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 14px 14px;
+}
+
+/* Light theme variant */
+.app-layout[data-theme="light"] .panel--right {
+  background: rgba(240, 237, 228, 0.88);
+  border-color: rgba(0, 0, 0, 0.07);
+}
 
 /* ─── Canvas: full-bleed behind the floating panel ───────────────────────── */
 
@@ -135,26 +154,23 @@
 
 /* Large desktop ≥ 1440px */
 @media (min-width: 1440px) {
-  .app-layout       { grid-template-columns: 1fr 260px; }
   .panel--left      { width: 240px; }
+  .panel--right     { width: 220px; }
 }
 
 /* Desktop 1024px – 1439px */
 @media (min-width: 1024px) and (max-width: 1439px) {
-  .app-layout       { grid-template-columns: 1fr 220px; }
   .panel--left      { width: 220px; }
 }
 
 /* Tablet landscape 768px – 1023px */
 @media (min-width: 768px) and (max-width: 1023px) {
-  .app-layout       { grid-template-columns: 1fr; grid-template-areas: "canvas"; }
   .panel--right     { display: none; }
   .panel--left      { width: 210px; }
 }
 
 /* Tablet portrait + large mobile 480px – 767px */
 @media (min-width: 480px) and (max-width: 767px) {
-  .app-layout       { grid-template-columns: 1fr; grid-template-areas: "canvas"; }
   .panel--right     { display: none; }
 
   .panel--left {
@@ -180,7 +196,6 @@
 
 /* Mobile < 480px */
 @media (max-width: 479px) {
-  .app-layout       { grid-template-columns: 1fr; grid-template-areas: "canvas"; }
   .panel--right     { display: none; }
 
   .panel--left {

@@ -5,11 +5,9 @@ export default function RightPanel({ theme }) {
   const isDark = theme === 'dark'
   const text   = isDark ? '#f0ede4' : '#1a1a18'
   const muted  = isDark ? 'rgba(240,237,228,0.38)' : 'rgba(26,26,24,0.35)'
-  const bg     = isDark ? '#191812' : '#F0EDE4'
 
   return (
-    <aside className="panel panel--right"
-      style={{ background: bg, padding: '18px 16px', overflow: 'hidden' }}>
+    <aside className="panel panel--right">
 
       <div className="panel-scroll" style={{ flex: 1, overflowY: 'auto' }}>
         <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: '0.13em', color: muted, textTransform: 'uppercase', marginBottom: 16 }}>
