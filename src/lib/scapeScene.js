@@ -8,6 +8,7 @@ import {
   MeshBasicMaterial,
   Mesh,
   CanvasTexture,
+  LinearFilter,
 } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import gsap from 'gsap'
@@ -79,15 +80,18 @@ export function createScapeScene(canvas) {
     disposeNameMesh()
     if (!currentName) return
 
-    const fontSize = 120
-    const padding  = 80
+    // Render at high resolution so text is crisp at any viewport size
+    const fontSize = 280
+    const text     = currentName.toUpperCase()
+
     const tmp  = document.createElement('canvas')
     const tctx = tmp.getContext('2d')
     tctx.font  = `500 ${fontSize}px "Zalando Sans SemiExpanded", sans-serif`
-    const textW = tctx.measureText(currentName.toUpperCase()).width
+    const measuredW = tctx.measureText(text).width
 
-    const texW = Math.ceil(textW + padding * 2)
-    const texH = Math.ceil(fontSize * 1.5)
+    // Minimum 4096px wide so the texture is never upscaled on retina displays
+    const texW = Math.max(4096, Math.ceil(measuredW + fontSize * 2))
+    const texH = Math.ceil(fontSize * 1.6)
     const tc   = document.createElement('canvas')
     tc.width  = texW
     tc.height = texH
@@ -97,9 +101,11 @@ export function createScapeScene(canvas) {
     ctx.textAlign     = 'center'
     ctx.textBaseline  = 'middle'
     ctx.letterSpacing = '0.08em'
-    ctx.fillText(currentName.toUpperCase(), texW / 2, texH / 2)
+    ctx.fillText(text, texW / 2, texH / 2)
 
     const texture = new CanvasTexture(tc)
+    texture.generateMipmaps = false
+    texture.minFilter = LinearFilter
 
     // Size the plane to fill the canvas width at z=-5 in camera space
     const zDist = 5

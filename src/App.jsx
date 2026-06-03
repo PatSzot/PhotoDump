@@ -79,6 +79,7 @@ function rotateImage90(url) {
 // ─── Preview dimensions ───────────────────────────────────────────────────────
 
 function getPreviewDimensions(aspectRatio, containerW, containerH) {
+  if (aspectRatio === 'open') return { width: containerW, height: containerH }
   const padding = 40
   const w = Math.max(1, containerW - padding * 2)
   const h = Math.max(1, containerH - padding * 2)
@@ -110,7 +111,7 @@ export default function App() {
   const [scapeName,       setScapeName]       = useState('')
   const [presetId,        setPresetId]        = useState('landscape')
   const [controls,        setControls]        = useState(PRESETS['sphere'].defaults)
-  const [aspectRatio,     setAspectRatio]     = useState('1:1')
+  const [aspectRatio,     setAspectRatio]     = useState('open')
   const [previewDims,     setPreviewDims]     = useState({ width: 400, height: 400 })
 
   // ── Body background ────────────────────────────────────────────────────────
@@ -176,7 +177,6 @@ export default function App() {
 
   function handlePresetChange(id) {
     setPresetId(id)
-    if (PRESETS[id]) setControls(PRESETS[id].defaults)
   }
 
   // ── Share link ─────────────────────────────────────────────────────────────

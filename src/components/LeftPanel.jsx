@@ -13,6 +13,7 @@ const SLIDERS = [
 ]
 
 const ASPECTS = [
+  { label: 'Open', value: 'open', size: null },
   { label: '1:1',  value: '1:1',  size: { width: 1080, height: 1080 } },
   { label: '9:16', value: '9:16', size: { width: 1080, height: 1920 } },
   { label: '16:9', value: '16:9', size: { width: 1920, height: 1080 } },
