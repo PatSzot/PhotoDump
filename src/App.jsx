@@ -283,7 +283,7 @@ export default function App() {
           <LandscapeCanvas
             ref={scapeCanvasRef}
             images={images}
-            corner={corners === 'rounded' ? 0.07 : 0.0}
+            corner={corners === 'rounded' ? 0.04 : 0.0}
           />
         ) : (
           /* Animation presets: constrained aspect-ratio box */
