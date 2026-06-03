@@ -2,6 +2,7 @@ import {
   WebGLRenderer,
   PerspectiveCamera,
   Scene,
+  Group,
   AmbientLight,
   PlaneGeometry,
   MeshBasicMaterial,
@@ -10,7 +11,7 @@ import {
 } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import gsap from 'gsap'
-import { createPhotoPlane, disposePhotoPlane } from './photoPlane.js'
+import { createPhotoPlane, createSquarePhotoPlane, disposePhotoPlane } from './photoPlane.js'
 import { PRESETS } from './presets.js'
 
 // ─── Name texture helper ───────────────────────────────────────────────────────
@@ -57,8 +58,10 @@ export function createScapeScene(canvas) {
   camera.position.set(0, 0, 6)
 
   // ── Scene ──────────────────────────────────────────────────────────────────
-  const scene = new Scene()
+  const scene    = new Scene()
+  const fanGroup = new Group()
   scene.add(new AmbientLight(0xffffff, 1.0))
+  scene.add(fanGroup)
   // Camera must be in scene for its children (name mesh) to render
   scene.add(camera)
 
@@ -70,6 +73,7 @@ export function createScapeScene(canvas) {
 
   // ── State ──────────────────────────────────────────────────────────────────
   let meshes          = []
+  let currentUrls     = []
   let nameMesh        = null
   let currentPreset   = PRESETS['sphere']
   let currentPresetId = 'sphere'
@@ -77,12 +81,24 @@ export function createScapeScene(canvas) {
   let animClock       = 0
   let lastTimestamp   = null
   let isPaused        = false
+  let canvasWidth     = 1080
+  let canvasHeight    = 1080
 
   // ── Internal helpers ───────────────────────────────────────────────────────
 
   function applyLayout() {
     if (meshes.length === 0) return
-    currentPreset.layoutPhotos(meshes, currentControls)
+    currentPreset.layoutPhotos(meshes, currentControls, canvasWidth, canvasHeight)
+  }
+
+  function driveFanAnimation() {
+    if (currentPresetId !== 'rotatingImages' || meshes.length === 0) return
+    const masterAngle = Math.sin(animClock * Math.PI * 2) * (55 * Math.PI / 180)
+    fanGroup.rotation.z = masterAngle
+    meshes.forEach((mesh, i) => {
+      const phase = animClock + i * (1 / Math.max(meshes.length, 1)) * 0.5
+      mesh.rotation.z = Math.sin(phase * Math.PI * 2) * (10 * Math.PI / 180)
+    })
   }
 
   function disposeNameMesh() {
@@ -97,30 +113,31 @@ export function createScapeScene(canvas) {
   // ── Public API ─────────────────────────────────────────────────────────────
 
   async function setPhotos(urlArray) {
+    currentUrls = urlArray || []
+
     if (meshes.length > 0) {
       gsap.killTweensOf(meshes.map(m => m.position))
       gsap.killTweensOf(meshes.map(m => m.rotation))
     }
 
-    for (const mesh of meshes) {
-      scene.remove(mesh)
-      disposePhotoPlane(mesh)
-    }
+    for (const mesh of meshes) disposePhotoPlane(mesh)  // disposePhotoPlane removes from parent
     meshes = []
 
-    if (!urlArray || urlArray.length === 0) return
+    if (!currentUrls.length) return
 
-    const scale = currentControls.scale
-    const newMeshes = await Promise.all(urlArray.map(url => createPhotoPlane(url, scale)))
+    const isRotating = currentPresetId === 'rotatingImages'
+    const newMeshes  = await Promise.all(
+      currentUrls.map(url => isRotating ? createSquarePhotoPlane(url) : createPhotoPlane(url, 1))
+    )
     for (const mesh of newMeshes) {
-      scene.add(mesh)
+      isRotating ? fanGroup.add(mesh) : scene.add(mesh)
       meshes.push(mesh)
     }
 
     applyLayout()
   }
 
-  function setPreset(presetId, controls) {
+  async function setPreset(presetId, controls) {
     const preset = PRESETS[presetId]
     if (!preset) return
 
@@ -129,7 +146,12 @@ export function createScapeScene(canvas) {
       gsap.killTweensOf(meshes.map(m => m.rotation))
     }
 
+    const wasRotating = currentPresetId === 'rotatingImages'
+    const isRotating  = presetId === 'rotatingImages'
+
+    // No meshes — just update state
     if (meshes.length === 0) {
+      if (wasRotating && !isRotating) fanGroup.rotation.z = 0
       currentPreset   = preset
       currentPresetId = presetId
       currentControls = { ...controls }
@@ -138,23 +160,54 @@ export function createScapeScene(canvas) {
       return
     }
 
-    const saved = meshes.map(m => ({
-      px: m.position.x, py: m.position.y, pz: m.position.z,
-      ry: m.rotation.y,
-    }))
+    // Switching between rotating ↔ non-rotating: recreate planes in correct format
+    if (wasRotating !== isRotating) {
+      for (const mesh of meshes) disposePhotoPlane(mesh)
+      meshes = []
+      if (wasRotating) fanGroup.rotation.z = 0
 
-    preset.layoutPhotos(meshes, controls)
+      currentPreset   = preset
+      currentPresetId = presetId
+      currentControls = { ...controls }
+      orbitControls.enabled = (presetId === 'explore')
+      animClock = 0
 
-    meshes.forEach((mesh, i) => {
-      const tx = mesh.position.x, ty = mesh.position.y, tz = mesh.position.z
-      const tRy = mesh.rotation.y
+      if (currentUrls.length > 0) {
+        const newMeshes = await Promise.all(
+          currentUrls.map(url => isRotating ? createSquarePhotoPlane(url) : createPhotoPlane(url, 1))
+        )
+        for (const mesh of newMeshes) {
+          isRotating ? fanGroup.add(mesh) : scene.add(mesh)
+          meshes.push(mesh)
+        }
+        applyLayout()
+      }
+      return
+    }
 
-      mesh.position.set(saved[i].px, saved[i].py, saved[i].pz)
-      mesh.rotation.y = saved[i].ry
+    // Both non-rotating: tween between positions
+    if (!isRotating) {
+      const saved = meshes.map(m => ({
+        px: m.position.x, py: m.position.y, pz: m.position.z,
+        ry: m.rotation.y,
+      }))
 
-      gsap.to(mesh.position, { x: tx, y: ty, z: tz, duration: 0.8, ease: 'power2.inOut' })
-      gsap.to(mesh.rotation, { y: tRy,           duration: 0.8, ease: 'power2.inOut' })
-    })
+      preset.layoutPhotos(meshes, controls, canvasWidth, canvasHeight)
+
+      meshes.forEach((mesh, i) => {
+        const tx = mesh.position.x, ty = mesh.position.y, tz = mesh.position.z
+        const tRy = mesh.rotation.y
+
+        mesh.position.set(saved[i].px, saved[i].py, saved[i].pz)
+        mesh.rotation.y = saved[i].ry
+
+        gsap.to(mesh.position, { x: tx, y: ty, z: tz, duration: 0.8, ease: 'power2.inOut' })
+        gsap.to(mesh.rotation, { y: tRy,           duration: 0.8, ease: 'power2.inOut' })
+      })
+    } else {
+      // Staying in rotatingImages (controls update)
+      applyLayout()
+    }
 
     currentPreset   = preset
     currentPresetId = presetId
@@ -202,7 +255,8 @@ export function createScapeScene(canvas) {
     } else if (currentPreset && meshes.length > 0) {
       const dt = (timestamp - lastTimestamp) / 1000
       animClock = (animClock + dt * currentControls.speed * 0.1) % 1.0
-      const state = currentPreset.getCameraState(animClock, currentControls)
+      driveFanAnimation()
+      const state = currentPreset.getCameraState(animClock, currentControls, canvasWidth, canvasHeight)
       if (state) {
         camera.position.copy(state.position)
         camera.lookAt(state.target)
@@ -215,6 +269,8 @@ export function createScapeScene(canvas) {
 
   function resize(width, height) {
     if (width <= 0 || height <= 0) return
+    canvasWidth  = width
+    canvasHeight = height
     renderer.setSize(width, height, false)
     camera.aspect = width / height
     camera.updateProjectionMatrix()
@@ -233,8 +289,9 @@ export function createScapeScene(canvas) {
 
   function setClockPosition(t) {
     animClock = t
+    driveFanAnimation()
     if (currentPresetId !== 'explore' && currentPreset) {
-      const state = currentPreset.getCameraState(t, currentControls)
+      const state = currentPreset.getCameraState(t, currentControls, canvasWidth, canvasHeight)
       if (state) {
         camera.position.copy(state.position)
         camera.lookAt(state.target)
@@ -257,12 +314,10 @@ export function createScapeScene(canvas) {
   function dispose() {
     gsap.killTweensOf(meshes.map(m => m.position))
     gsap.killTweensOf(meshes.map(m => m.rotation))
-    for (const mesh of meshes) {
-      scene.remove(mesh)
-      disposePhotoPlane(mesh)
-    }
+    for (const mesh of meshes) disposePhotoPlane(mesh)  // removes from parent (scene or fanGroup)
     meshes = []
     disposeNameMesh()
+    scene.remove(fanGroup)
     scene.remove(camera)
     orbitControls.dispose()
     renderer.dispose()

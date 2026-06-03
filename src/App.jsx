@@ -181,7 +181,7 @@ export default function App() {
 
   function handlePresetChange(id) {
     setPresetId(id)
-    setControls(PRESETS[id].defaults)
+    if (PRESETS[id]) setControls(PRESETS[id].defaults)
   }
 
   // ── Share link ─────────────────────────────────────────────────────────────

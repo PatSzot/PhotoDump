@@ -42,6 +42,47 @@ export function createPhotoPlane(imageUrl, scale) {
   })
 }
 
+// Center-crop square planes — used by rotatingImages preset
+export function createSquarePhotoPlane(imageUrl) {
+  return new Promise(resolve => {
+    const img = new Image()
+
+    img.onload = () => {
+      const MAX  = 1024
+      const size = Math.min(img.naturalWidth, img.naturalHeight)
+      const s    = Math.min(1, MAX / size)
+      const out  = Math.max(1, Math.round(size * s))
+
+      const canvas = document.createElement('canvas')
+      canvas.width  = out
+      canvas.height = out
+      const ctx = canvas.getContext('2d')
+      const srcX = (img.naturalWidth  - size) / 2
+      const srcY = (img.naturalHeight - size) / 2
+      ctx.drawImage(img, srcX, srcY, size, size, 0, 0, out, out)
+
+      const texture = new CanvasTexture(canvas)
+      const geo     = new PlaneGeometry(1, 1)
+      const mat     = new MeshBasicMaterial({ map: texture, side: DoubleSide, transparent: true })
+      const mesh    = new Mesh(geo, mat)
+      mesh.userData.imageUrl = imageUrl
+      mesh.userData.aspect   = 1
+      resolve(mesh)
+    }
+
+    img.onerror = () => {
+      const geo  = new PlaneGeometry(1, 1)
+      const mat  = new MeshBasicMaterial({ color: 0x999999, side: DoubleSide })
+      const mesh = new Mesh(geo, mat)
+      mesh.userData.imageUrl = imageUrl
+      mesh.userData.aspect   = 1
+      resolve(mesh)
+    }
+
+    img.src = imageUrl
+  })
+}
+
 export function disposePhotoPlane(mesh) {
   if (mesh.parent) mesh.parent.remove(mesh)
   mesh.geometry.dispose()
