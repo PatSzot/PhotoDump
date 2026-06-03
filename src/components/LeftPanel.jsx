@@ -214,9 +214,9 @@ export default function LeftPanel({
 
         <Divider />
 
-        {/* Preset */}
+        {/* Organize */}
         <section style={{ margin: '16px 0' }}>
-          <Label>Preset</Label>
+          <Label>Organize</Label>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {['landscape', 'sphere', 'ring', 'helix', 'rotatingImages'].map(id => (
             <PresetBtn
