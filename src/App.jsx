@@ -202,7 +202,7 @@ export default function App() {
         <div style={{
           position: 'fixed', top: '50%', left: '50%',
           transform: 'translate(-50%, -50%)',
-          fontSize: '40pt',
+          fontSize: 'clamp(14px, 2vw, 22px)',
           fontFamily: "'Zalando Sans SemiExpanded', sans-serif",
           fontWeight: 900,
           color: theme === 'dark' ? '#f0ede4' : '#000000',
