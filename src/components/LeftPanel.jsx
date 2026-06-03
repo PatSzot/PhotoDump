@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import 'remixicon/fonts/remixicon.css'
 import { PRESET_IDS, PRESETS } from '../lib/presets.js'
 
@@ -30,9 +30,38 @@ export default function LeftPanel({
   exporting, exportProgress, onExport,
   onShare,
 }) {
+  const [isOpen,   setIsOpen]   = useState(() => window.innerWidth >= 1024)
   const [copied,   setCopied]   = useState(false)
   const [copying,  setCopying]  = useState(false)
   const [shareUrl, setShareUrl] = useState(null)
+  const panelRef  = useRef(null)
+  const toggleRef = useRef(null)
+
+  // Auto-open on desktop resize, close on mobile resize
+  useEffect(() => {
+    function handleResize() {
+      if (window.innerWidth >= 1024) setIsOpen(true)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  // Close on outside click (mobile/tablet only)
+  useEffect(() => {
+    function handleClick(e) {
+      if (window.innerWidth >= 1024) return
+      if (!isOpen) return
+      if (panelRef.current?.contains(e.target)) return
+      if (toggleRef.current?.contains(e.target)) return
+      setIsOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    document.addEventListener('touchstart', handleClick)
+    return () => {
+      document.removeEventListener('mousedown', handleClick)
+      document.removeEventListener('touchstart', handleClick)
+    }
+  }, [isOpen])
 
   const isDark    = theme === 'dark'
   const text      = isDark ? '#f0ede4' : '#1a1a18'
@@ -85,7 +114,18 @@ export default function LeftPanel({
   }
 
   return (
-    <aside className="panel panel--left" style={{ background: bg }}>
+    <>
+    {/* Toggle button */}
+    <button
+      ref={toggleRef}
+      className={`panel-toggle-btn${isOpen ? ' panel-toggle-btn--open' : ''}`}
+      onClick={() => setIsOpen(o => !o)}
+      aria-label={isOpen ? 'Close panel' : 'Open panel'}
+    >
+      <i className={`ri-${isOpen ? 'close' : 'menu'}-line`} />
+    </button>
+
+    <aside ref={panelRef} className={`panel panel--left ${isOpen ? 'panel--visible' : 'panel--hidden'}`}>
 
       {/* ── Scrollable content ─────────────────────────────────────────── */}
       <div className="panel-scroll" style={{ flex: 1, overflowY: 'auto', padding: '18px 16px' }}>
@@ -300,6 +340,7 @@ export default function LeftPanel({
       </div>
 
     </aside>
+    </>
   )
 }
 

@@ -237,6 +237,7 @@ export default function App() {
 
   return (
     <div className={`app-layout${VIEW_MODE ? ' view-mode' : ''}`}
+      data-theme={theme}
       style={{ background: panelBg }}>
 
       {/* Hidden file input */}
