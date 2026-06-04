@@ -98,7 +98,7 @@ function FormatToggle({ format, onChange }) {
             className={`ep-seg ${format === key ? 'ep-seg--active' : ''}`}
             role="radio"
             aria-checked={format === key}
-            title={`${f.name} · ${f.label}`}
+            title={`${f.name} · ${f.export.w} × ${f.export.h}`}
             onClick={() => onChange(key)}
           >
             <span className="ep-ratio" style={{ '--w': `${w}rem`, '--h': `${h}rem` }} />

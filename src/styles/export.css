@@ -2,25 +2,25 @@
 
 .ep-field {
   align-items: center;
-  background: #202020;
-  border-radius: 10px;
-  color: #fff;
+  background: rgba(255,255,255,0.06);
+  border-radius: 6px;
+  color: rgba(240,237,228,0.9);
   display: flex;
   gap: 12px;
   justify-content: space-between;
-  min-height: 42px;
+  min-height: 38px;
   overflow: hidden;
-  padding: 0 14px;
+  padding: 0 10px;
   position: relative;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 13px;
+  font-size: 11px;
   user-select: none;
 }
 
 .ep-field--inline { min-height: 40px; }
 
 .ep-field-track {
-  background: rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.08);
   border-radius: inherit;
   bottom: 0; left: 0;
   position: absolute;
@@ -30,22 +30,22 @@
 }
 
 .ep-field-track::after {
-  background: rgba(255,255,255,0.4);
+  background: rgba(240,237,228,0.3);
   border-radius: 999px;
   content: '';
-  height: 18px;
+  height: 14px;
   position: absolute;
-  right: 8px;
+  right: 6px;
   top: 50%;
   transform: translateY(-50%);
   width: 2px;
 }
 
-.ep-number-field:hover .ep-field-track { background: rgba(255,255,255,0.14); }
+.ep-number-field:hover .ep-field-track { background: rgba(255,255,255,0.11); }
 
 .ep-field-label {
-  color: rgba(255,255,255,0.5);
-  font-size: 13px;
+  color: rgba(240,237,228,0.42);
+  font-size: 11px;
   position: relative;
   white-space: nowrap;
 }
@@ -72,7 +72,7 @@
 .ep-pill-input {
   background: transparent;
   border: none;
-  color: #fff;
+  color: rgba(240,237,228,0.9);
   font: inherit;
   min-width: 2ch;
   outline: none;
@@ -82,21 +82,27 @@
 }
 
 .ep-pill-text {
-  color: #fff;
+  color: rgba(240,237,228,0.9);
   font-variant-numeric: tabular-nums;
   cursor: text;
+}
+
+.ep-unit {
+  color: rgba(240,237,228,0.35);
+  font-size: 0.85em;
+  margin-left: 2px;
 }
 
 .ep-panel { display: flex; flex-direction: column; gap: 6px; }
 
 .ep-section {
-  color: rgba(255,255,255,0.4);
+  color: rgba(240,237,228,0.42);
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
+  font-size: 9px;
   font-weight: 500;
-  margin: 20px 0 6px;
-  padding: 0 6px;
-  letter-spacing: 0.04em;
+  margin: 16px 0 8px;
+  padding: 0 2px;
+  letter-spacing: 0.13em;
   text-transform: uppercase;
 }
 
@@ -522,16 +528,26 @@ kbd {
   flex-shrink: 0;
 }
 
-/* ─── Section hint ────────────────────────────────────────────────────────── */
+/* ─── Section hint + photo count ──────────────────────────────────────────── */
 
 .ep-section-hint {
-  color: rgba(255,255,255,0.28);
+  color: rgba(240,237,228,0.28);
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.04em;
+  font-size: 9px;
+  letter-spacing: 0.07em;
   line-height: 1.5;
   margin: 8px 0 0;
-  padding: 0 6px;
+  padding: 0 2px;
+}
+
+.ep-photo-count {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: rgba(240,237,228,0.3);
+  padding: 0 2px;
+  margin: 4px 0 8px;
+  text-transform: uppercase;
 }
 
 /* ─── Wide left panel (export mode) ───────────────────────────────────────── */

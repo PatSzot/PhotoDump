@@ -143,6 +143,18 @@
   justify-content: center;
 }
 
+/* ─── Export canvas wrapper: aspect-ratio constrained, centered ──────────── */
+
+.export-canvas-wrapper {
+  position: relative;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  outline: 1px solid rgba(255, 255, 255, 0.07);
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              height 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 /* ─── Panel toggle button ────────────────────────────────────────────────── */
 
 .panel-toggle-btn {

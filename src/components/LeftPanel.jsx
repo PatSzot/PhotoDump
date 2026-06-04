@@ -137,6 +137,7 @@ export default function LeftPanel({
             onControlsChange={onExportControlsChange}
             loopS={loopS}
             onLoopChange={onLoopChange}
+            photoCount={images.length}
           />
         </div>
       ) : (

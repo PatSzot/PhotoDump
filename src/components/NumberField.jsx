@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo } from 'react'
 
-export default function NumberField({ label, value, min, max, step, onChange }) {
+export default function NumberField({ label, value, min, max, step, onChange, unit }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft]     = useState('')
   const inputRef = useRef(null)
@@ -81,7 +81,9 @@ export default function NumberField({ label, value, min, max, step, onChange }) 
               style={{ width: `${Math.max(2, draft.length)}ch` }}
             />
           ) : (
-            <span className="ep-pill-text" onClick={handleValueClick}>{displayValue}</span>
+            <span className="ep-pill-text" onClick={handleValueClick}>
+              {displayValue}{unit && <span className="ep-unit">{unit}</span>}
+            </span>
           )}
         </span>
       </div>

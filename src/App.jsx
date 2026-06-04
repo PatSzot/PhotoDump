@@ -88,6 +88,7 @@ export default function App() {
   const poolRef          = useRef([])
   const sceneRef         = useRef(null)
   const shuffleCanvasRef = useRef(null)
+  const canvasAreaRef    = useRef(null)
 
   // Core state
   const [images,  setImages]  = useState([])
@@ -109,11 +110,34 @@ export default function App() {
   const [isExporting,    setIsExporting]    = useState(false)
   const [exportPct,      setExportPct]      = useState(0)
   const [imageModalOpen, setImageModalOpen] = useState(false)
+  const [previewDims,    setPreviewDims]    = useState({ width: 800, height: 800 })
 
   // ── Body background ────────────────────────────────────────────────────────
   useEffect(() => {
     document.body.style.background = theme === 'dark' ? '#191812' : '#F0EDE4'
   }, [theme])
+
+  // ── Preview canvas dimensions (export mode only) ────────────────────────────
+  useEffect(() => {
+    if (!isExport) return
+    const el = canvasAreaRef.current
+    if (!el) return
+    function compute() {
+      const { width: W, height: H } = el.getBoundingClientRect()
+      const PADDING = 32
+      const maxW = Math.max(1, W - PADDING * 2)
+      const maxH = Math.max(1, H - PADDING * 2)
+      const ratio = FORMATS[exportFormat]?.ratio ?? 1
+      let pw, ph
+      if (maxW / maxH > ratio) { ph = maxH; pw = Math.round(ph * ratio) }
+      else                      { pw = maxW; ph = Math.round(pw / ratio) }
+      setPreviewDims({ width: pw, height: ph })
+    }
+    compute()
+    const ro = new ResizeObserver(compute)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [isExport, exportFormat])
 
   // ── Load shared scape ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -271,24 +295,33 @@ export default function App() {
         />
       )}
 
-      <div className="canvas-area">
-        <div style={{ position: 'absolute', inset: 0, display: showShuffle ? 'none' : 'block' }}>
-          <LandscapeCanvas
-            images={images}
-            corner={corner}
-            onSceneReady={scene => { sceneRef.current = scene }}
-          />
-        </div>
-        {showShuffle && (
-          <div style={{ position: 'absolute', inset: 0 }}>
-            <ShuffleCanvas
-              ref={shuffleCanvasRef}
+      <div className="canvas-area" ref={canvasAreaRef}>
+        {/* Canvas wrapper: fills area in explore, constrained to aspect ratio in export */}
+        <div
+          className={isExport ? 'export-canvas-wrapper' : undefined}
+          style={isExport
+            ? { width: previewDims.width, height: previewDims.height }
+            : { position: 'absolute', inset: 0 }
+          }
+        >
+          <div style={{ position: 'absolute', inset: 0, display: showShuffle ? 'none' : 'block' }}>
+            <LandscapeCanvas
               images={images}
-              cornerFraction={exportControls.corners}
-              speed={exportControls.speed}
+              corner={corner}
+              onSceneReady={scene => { sceneRef.current = scene }}
             />
           </div>
-        )}
+          {showShuffle && (
+            <div style={{ position: 'absolute', inset: 0 }}>
+              <ShuffleCanvas
+                ref={shuffleCanvasRef}
+                images={images}
+                cornerFraction={exportControls.corners}
+                speed={exportControls.speed}
+              />
+            </div>
+          )}
+        </div>
         {!VIEW_MODE && images.length === 0 && (
           <div
             onClick={() => photoInputRef.current?.click()}

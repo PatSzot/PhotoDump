@@ -11,11 +11,24 @@ const PRESETS = [
   { key: 'shuffle', label: 'Shuffle' },
 ]
 
+function PhotoCount({ count, isShuffle }) {
+  let text
+  if (count === 0) {
+    text = 'No photos · drop images to begin'
+  } else if (isShuffle) {
+    text = `${count} photo${count !== 1 ? 's' : ''} loaded`
+  } else {
+    text = `${count} photo${count !== 1 ? 's' : ''} loaded`
+  }
+  return <p className="ep-photo-count">{text}</p>
+}
+
 export default function ExportPanel({
   presetId, onPresetChange,
   bgColor, onBgChange,
   controls, onControlsChange,
   loopS, onLoopChange,
+  photoCount = 0,
 }) {
   function setCtrl(key, val) {
     onControlsChange({ ...controls, [key]: val })
@@ -26,7 +39,7 @@ export default function ExportPanel({
   return (
     <div>
       {/* Preset */}
-      <div className="ep-field ep-field--inline" style={{ marginBottom: 6 }}>
+      <div className="ep-field ep-field--inline" style={{ marginBottom: 4 }}>
         <span className="ep-field-label">Preset</span>
         <div className="ep-field-value">
           <div style={{ position: 'relative' }}>
@@ -35,31 +48,34 @@ export default function ExportPanel({
               onChange={e => onPresetChange(e.target.value)}
               style={{
                 appearance: 'none',
-                background: 'rgba(255,255,255,0.1)',
+                background: 'rgba(255,255,255,0.08)',
                 border: 'none',
                 borderRadius: 6,
-                color: '#fff',
+                color: 'rgba(240,237,228,0.9)',
                 cursor: 'pointer',
                 fontFamily: '"IBM Plex Mono", monospace',
-                fontSize: 12,
+                fontSize: 11,
                 outline: 'none',
-                padding: '4px 24px 4px 8px',
+                padding: '4px 22px 4px 8px',
               }}
             >
               {PRESETS.map(p => (
-                <option key={p.key} value={p.key} style={{ background: '#202020' }}>{p.label}</option>
+                <option key={p.key} value={p.key} style={{ background: '#1a1a16' }}>{p.label}</option>
               ))}
             </select>
             <span style={{
               pointerEvents: 'none', position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)',
-              color: 'rgba(255,255,255,0.5)', fontSize: 10,
+              color: 'rgba(240,237,228,0.4)', fontSize: 10,
             }}>▾</span>
           </div>
         </div>
       </div>
 
+      {/* Photo count */}
+      <PhotoCount count={photoCount} isShuffle={isShuffle} />
+
       {/* Background */}
-      <div style={{ marginBottom: 6 }}>
+      <div style={{ marginBottom: 4 }}>
         <BgToggle bgColor={bgColor} onBgChange={onBgChange} />
       </div>
 
@@ -84,16 +100,10 @@ export default function ExportPanel({
         )}
       </div>
 
-      {isShuffle && (
-        <p className="ep-section-hint">
-          Each photo gets one card slot. Both stacks cycle through all photos.
-        </p>
-      )}
-
       {/* Video Length */}
       <h3 className="ep-section">Video Length</h3>
       <div className="ep-panel">
-        <NumberField label="Loop" value={loopS} min={1} max={24} step={0.1} onChange={onLoopChange} />
+        <NumberField label="Loop" value={loopS} min={1} max={24} step={0.1} onChange={onLoopChange} unit=" s" />
         <LoopTimeline loopS={loopS} />
       </div>
     </div>
