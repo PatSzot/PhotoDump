@@ -3,6 +3,7 @@ import exifr from 'exifr'
 import LandscapeCanvas from './components/LandscapeCanvas.jsx'
 import ShuffleCanvas from './components/ShuffleCanvas.jsx'
 import MainStageCanvas from './components/MainStageCanvas.jsx'
+import SpiralCanvas from './components/SpiralCanvas.jsx'
 import LeftPanel from './components/LeftPanel.jsx'
 import RightPanel from './components/RightPanel.jsx'
 import ExportDock, { FORMATS } from './components/ExportDock.jsx'
@@ -93,6 +94,7 @@ export default function App() {
   const sceneRef         = useRef(null)
   const shuffleCanvasRef   = useRef(null)
   const mainStageCanvasRef = useRef(null)
+  const spiralCanvasRef    = useRef(null)
   const canvasAreaRef    = useRef(null)
 
   // Core state
@@ -169,8 +171,9 @@ export default function App() {
       if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target?.isContentEditable) return
       if (e.code === 'Space') {
         e.preventDefault()
-        if (presetId === 'shuffle')        shuffleCanvasRef.current?.togglePause()
+        if      (presetId === 'spiral')    spiralCanvasRef.current?.togglePause()
         else if (presetId === 'mainStage') mainStageCanvasRef.current?.togglePause()
+        else if (presetId === 'shuffle')   shuffleCanvasRef.current?.togglePause()
         else                               sceneRef.current?.togglePause()
       }
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
@@ -239,10 +242,13 @@ export default function App() {
     if (isExporting || images.length === 0) return
     const isShuffle      = presetId === 'shuffle'
     const isMainStage    = presetId === 'mainStage'
-    const scene          = (!isShuffle && !isMainStage) ? sceneRef.current : null
+    const isSpiral       = presetId === 'spiral'
+    const is2D           = isShuffle || isMainStage || isSpiral
+    const scene              = !is2D       ? sceneRef.current                           : null
     const shuffleRenderer    = isShuffle   ? shuffleCanvasRef.current?.getRenderer()   : null
     const mainStageRenderer  = isMainStage ? mainStageCanvasRef.current?.getRenderer() : null
-    if (!scene && !shuffleRenderer && !mainStageRenderer) return
+    const spiralRenderer     = isSpiral    ? spiralCanvasRef.current?.getRenderer()    : null
+    if (!scene && !shuffleRenderer && !mainStageRenderer && !spiralRenderer) return
     setIsExporting(true)
     setExportPct(0)
     try {
@@ -250,6 +256,7 @@ export default function App() {
         scene,
         shuffleRenderer,
         mainStageRenderer,
+        spiralRenderer,
         fps,
         loopS,
         format: FORMATS[exportFormat].export,
@@ -268,8 +275,9 @@ export default function App() {
   // ── Render ─────────────────────────────────────────────────────────────────
   const panelBg      = theme === 'dark' ? '#191812' : '#F0EDE4'
   const isExport     = mode === 'export'
-  const showShuffle  = isExport && presetId === 'shuffle'
+  const showShuffle   = isExport && presetId === 'shuffle'
   const showMainStage = isExport && presetId === 'mainStage'
+  const showSpiral    = isExport && presetId === 'spiral'
   // In export mode, fall back to the MYSCAPE letter photos when no user photos are loaded
   const exportImages = images.length > 0 ? images : DEFAULT_EXPORT_IMAGES
 
@@ -317,7 +325,7 @@ export default function App() {
             : { position: 'absolute', inset: 0 }
           }
         >
-          <div style={{ position: 'absolute', inset: 0, display: (showShuffle || showMainStage) ? 'none' : 'block' }}>
+          <div style={{ position: 'absolute', inset: 0, display: (showShuffle || showMainStage || showSpiral) ? 'none' : 'block' }}>
             <LandscapeCanvas
               images={isExport ? exportImages : images}
               corner={corner}
@@ -338,6 +346,16 @@ export default function App() {
             <div style={{ position: 'absolute', inset: 0 }}>
               <MainStageCanvas
                 ref={mainStageCanvasRef}
+                photos={exportImages}
+                bgColor={bgColor}
+                speed={exportControls.speed}
+              />
+            </div>
+          )}
+          {showSpiral && (
+            <div style={{ position: 'absolute', inset: 0 }}>
+              <SpiralCanvas
+                ref={spiralCanvasRef}
                 photos={exportImages}
                 bgColor={bgColor}
                 speed={exportControls.speed}

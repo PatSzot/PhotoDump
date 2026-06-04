@@ -10,6 +10,7 @@ const PRESETS = [
   { key: 'flow',      label: 'Flow'       },
   { key: 'shuffle',   label: 'Shuffle'    },
   { key: 'mainStage', label: 'Main Stage' },
+  { key: 'spiral',    label: 'Spiral'     },
 ]
 
 function PhotoCount({ count, isShuffle }) {
@@ -38,7 +39,8 @@ export default function ExportPanel({
 
   const isShuffle   = presetId === 'shuffle'
   const isMainStage = presetId === 'mainStage'
-  const is2D        = isShuffle || isMainStage
+  const isSpiral    = presetId === 'spiral'
+  const is2D        = isShuffle || isMainStage || isSpiral
 
   return (
     <div>
@@ -82,6 +84,13 @@ export default function ExportPanel({
         </p>
       )}
 
+      {/* Square hint for Spiral */}
+      {isSpiral && exportFormat !== 'square' && (
+        <p className="ep-photo-count" style={{ color: 'rgba(240,180,80,0.7)' }}>
+          Spiral is designed for 1:1 square format
+        </p>
+      )}
+
       {/* Photo count */}
       <PhotoCount count={photoCount} isShuffle={isShuffle} />
 
@@ -105,16 +114,16 @@ export default function ExportPanel({
         {!is2D && (
           <NumberField label="Scale"  value={controls.scale}  min={0.2} max={2}   step={0.05} onChange={v => setCtrl('scale', v)} />
         )}
-        {!isMainStage && (
+        {!isMainStage && !isSpiral && (
           <NumberField label="Corners" value={controls.corners} min={0} max={0.5} step={0.01} onChange={v => setCtrl('corners', v)} />
         )}
         {is2D && (
           <NumberField
             label="Speed"
             value={controls.speed}
-            min={isMainStage ? 0.2 : 0.2}
-            max={isMainStage ? 3.0 : 4.0}
-            step={isMainStage ? 0.05 : 0.1}
+            min={0.1}
+            max={isMainStage ? 3.0 : 3.0}
+            step={isMainStage ? 0.05 : 0.05}
             onChange={v => setCtrl('speed', v)}
           />
         )}

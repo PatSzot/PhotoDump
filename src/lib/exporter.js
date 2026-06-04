@@ -2,13 +2,18 @@ import { Output, CanvasSource, BufferTarget, Mp4OutputFormat } from 'mediabunny'
 
 /**
  * Export the current scene to an H.264 MP4.
+ * Pass `spiralRenderer`    for the Spiral preset.
  * Pass `shuffleRenderer`   for the Shuffle preset.
  * Pass `mainStageRenderer` for the Main Stage preset.
  * Pass `scene`             for all Three.js presets (real-time capture).
  */
-export async function exportVideo({ scene, shuffleRenderer, mainStageRenderer, fps, loopS, format, bgColor, onProgress }) {
+export async function exportVideo({ scene, shuffleRenderer, mainStageRenderer, spiralRenderer, fps, loopS, format, bgColor, onProgress }) {
   if (typeof VideoEncoder === 'undefined') {
     throw new Error('VideoEncoder API not available. Use Chrome 94+, Edge 94+, or Firefox 130+.')
+  }
+
+  if (spiralRenderer) {
+    return export2D({ renderer: spiralRenderer, fps, loopS, format, bgColor, onProgress, label: 'spiral' })
   }
 
   if (mainStageRenderer) {
