@@ -1,179 +1,182 @@
 // ─── Spiral 2D canvas renderer ────────────────────────────────────────────────
-// Renders N photos in a radial spiral layout:
-//   - Outer layers (high initScale) → outer ring, large tile, peaks later
-//   - Inner layers (low initScale)  → inner ring, small tile, peaks earlier
-//   - Group rotates −720° over TOTAL_F (21.6 s at 60 fps)
-//   - Each photo zooms from its orbital tile size → fills canvas at peak
+// Replicates Spiral-1-1.json (Jitter/Lottie source):
+//   1350×1350 ref canvas · 60 fps · 1296 frames · 19 layers
 //
-// Source: Spiral-1-1.json (Jitter) — 1350×1350, 60 fps, 1296 frames, 19 layers.
+// Key facts verified from raw JSON:
+//   • ALL cards orbit at the SAME fixed radius from canvas center (~8% of canvas)
+//   • Card size = base × (scalePercent / 100) — not a per-layer tile size
+//   • Each card has a FIXED rotation offset so it tilts outward as it orbits
+//   • Peak behaviour: scale 820% → snap to 100% instantly, opacity → 0
+//   • After hiddenDuration, card reappears and grows back toward peak
 
-const TOTAL_F    = 1296   // 21.6 s at 60 fps
-const GROUP_ROT  = -720   // total group rotation over TOTAL_F (degrees)
-const PEAK_S     = 820    // peak scale (image fills canvas at this value)
-const SNAP_S     = 100    // scale immediately after peak snap
-const ANG_STEP   = 36     // angular step between layers (°) — 360°/10
-const HIDDEN_MUL = 10     // hidden window = HIDDEN_MUL × stagger
-const S_OUTER    = 784    // initScale for outermost layer
-const S_INNER    = 136    // initScale for innermost layer
+// ── Constants verified from raw JSON ─────────────────────────────────────────
 
-// Radial layout constants (fractions of min(W,H))
-const ORBIT_R_OUTER = 0.37  // outer ring radius
-const ORBIT_R_INNER = 0.06  // inner ring radius
-const TILE_OUTER    = 0.20  // outer tile size
-const TILE_INNER    = 0.05  // inner tile size
-const SNAP_TILE     = 0.03  // tile size at the post-peak snap moment
+const TOTAL_F        = 1296          // 21.6 s at 60 fps
+const GROUP_ROT_DEG  = -720          // total group rotation (2 full CCW rotations)
+const SCALE_PEAK     = 820           // peak scale % — card fills + overflows canvas
+const SCALE_RESET    = 100           // scale immediately after peak snap
+const HIDDEN_RATIO   = 10.0          // hiddenFrames = stagger × 10  (648/64.8)
+const SCALE_MAX_INIT = 784           // initScalePercent for outermost layer (i=0)
+const SCALE_MIN_INIT = 136           // initScalePercent for innermost layer (i=18)
+const ROT_START      = -684          // rotOffset of layer 0 (degrees)
+const ANG_STEP       = 36            // rotOffset increment per layer (degrees)
 
-// ─── Build per-layer params from N ───────────────────────────────────────────
+// Derived from child anchor [427,445] and position [180,180] with parentScale=0.30:
+//   radius = sqrt((180-427)²+(180-445)²) × 0.30 / 1350 ≈ 108.7 / 1350
+const ORBIT_R_NORM   = 108.7 / 1350   // ≈ 0.0806  — fixed orbit radius for ALL cards
+// Base card size at 100% scale: 821px precomp × 30% parent / 1350 reference
+const BASE_CARD_NORM = (821 * 0.30) / 1350  // ≈ 0.1824
+
+// ── buildLayers(N) ───────────────────────────────────────────────────────────
 
 function buildLayers(N) {
+  if (N === 0) N = 8
   const stagger    = TOTAL_F / N
-  const hiddenDur  = Math.min(HIDDEN_MUL * stagger, TOTAL_F - stagger)
-  const scaleStep  = N > 1 ? (S_OUTER - S_INNER) / (N - 1) : 0
-  const outerCount = Math.max(1, Math.ceil(N / 2))
-  const innerCount = N - outerCount
+  const hiddenF    = Math.min(stagger * HIDDEN_RATIO, TOTAL_F - stagger)
+  const scaleStep  = N > 1 ? (SCALE_MAX_INIT - SCALE_MIN_INIT) / (N - 1) : 0
+  const outerCount = Math.ceil(N / 2)
+  const dimCount   = N - outerCount
 
   return Array.from({ length: N }, (_, i) => {
-    const initScale = S_OUTER - i * scaleStep
-    const peakFrame = (i + 1) * stagger
-    const hiddenEnd = peakFrame + hiddenDur
+    const initScalePercent = SCALE_MAX_INIT - i * scaleStep
+    const peakFrame        = (i + 1) * stagger
+    const hiddenEnd        = peakFrame + hiddenF
 
-    // Angular offset: −ANG_STEP per layer, outermost most negative
-    const angleOffset = -(N - i) * ANG_STEP
+    // Fixed rotation offset in group space (same 36° step as source)
+    const rotOffsetDeg = ROT_START + i * ANG_STEP
 
-    let initOpacity, fadeToFullFrame
+    // Opacity: outer half at 100%, inner half graduated 90% → 10%
+    let initOpacity
     if (i < outerCount) {
-      initOpacity     = 100
-      fadeToFullFrame = 0
+      initOpacity = 1.0
     } else {
-      const idx       = i - outerCount + 1
-      initOpacity     = Math.max(10, 100 - idx * 90 / Math.max(innerCount, 1))
-      fadeToFullFrame = idx * stagger
+      const dimIndex = i - outerCount
+      initOpacity = Math.max(0.1, 1.0 - (dimIndex + 1) * (0.9 / Math.max(dimCount, 1)))
     }
 
-    return { i, angleOffset, initScale, peakFrame, hiddenEnd, initOpacity, fadeToFullFrame }
+    return { i, rotOffsetDeg, initScalePercent, peakFrame, hiddenEnd, initOpacity }
   })
 }
 
-// ─── Layer state at frame fMod (0..TOTAL_F) ──────────────────────────────────
+// ── getLayerState(layer, fMod) ───────────────────────────────────────────────
+// Returns { scalePercent, opacity }  — opacity is 0..1
 
 function getLayerState(layer, fMod) {
-  const { initScale, peakFrame, hiddenEnd, initOpacity, fadeToFullFrame } = layer
+  const { initScalePercent, peakFrame, hiddenEnd, initOpacity } = layer
 
   if (fMod < peakFrame) {
-    // Phase 1 — growing: initScale → PEAK_S
-    const t     = peakFrame > 0 ? fMod / peakFrame : 1
-    const scale = initScale + (PEAK_S - initScale) * t
-
-    let opacity = 100
-    if (initOpacity < 100 && fadeToFullFrame > 0 && fMod < fadeToFullFrame) {
-      opacity = initOpacity + (100 - initOpacity) * (fMod / fadeToFullFrame)
+    // GROWING: initScalePercent → SCALE_PEAK, opacity initOpacity → 1
+    const t = peakFrame > 0 ? fMod / peakFrame : 0
+    return {
+      scalePercent: initScalePercent + (SCALE_PEAK - initScalePercent) * t,
+      opacity:      initOpacity + (1.0 - initOpacity) * t,
     }
-    return { scale, opacity }
   }
 
-  // Phase 2 — post-peak: SNAP_S → initScale (regrow), hidden until hiddenEnd
-  const regrowLen = TOTAL_F - peakFrame
-  const tR        = regrowLen > 0 ? (fMod - peakFrame) / regrowLen : 1
-  const scale     = SNAP_S + (initScale - SNAP_S) * tR
-  const isHidden  = fMod < Math.min(hiddenEnd, TOTAL_F)
-  return { scale, opacity: isHidden ? 0 : 100 }
+  if (fMod < hiddenEnd) {
+    // HIDDEN: instant snap to SCALE_RESET, opacity = 0
+    return { scalePercent: SCALE_RESET, opacity: 0 }
+  }
+
+  // REAPPEAR: grow from initScalePercent → SCALE_PEAK for rest of cycle
+  const phaseLen = TOTAL_F - hiddenEnd
+  const t = phaseLen > 0 ? (fMod - hiddenEnd) / phaseLen : 0
+  return {
+    scalePercent: initScalePercent + (SCALE_PEAK - initScalePercent) * t,
+    opacity:      initOpacity + (1.0 - initOpacity) * t,
+  }
 }
 
-// ─── Cover-fit a photo into [x, y, w, h] ─────────────────────────────────────
+// ── drawCard ─────────────────────────────────────────────────────────────────
 
-function drawCoverFit(ctx, photo, x, y, w, h) {
-  const iw  = photo.naturalWidth
-  const ih  = photo.naturalHeight
-  const iAr = iw / ih
-  const bAr = w / h
-  let sx, sy, sw, sh
-  if (iAr > bAr) { sh = ih; sw = ih * bAr; sx = (iw - sw) / 2; sy = 0 }
-  else            { sw = iw; sh = iw / bAr; sx = 0; sy = (ih - sh) / 2 }
-  ctx.drawImage(photo, sx, sy, sw, sh, x, y, w, h)
+function drawCard(ctx, photo, cx, cy, size, opacity, tiltAngle) {
+  ctx.save()
+  ctx.globalAlpha = Math.max(0, Math.min(1, opacity))
+  ctx.translate(cx, cy)
+  ctx.rotate(tiltAngle)   // card tilts to match its orbital angle — always faces outward
+
+  const half = size / 2
+  const r    = size * 0.06  // rounded corners
+
+  if (photo) {
+    const iw = photo.naturalWidth
+    const ih = photo.naturalHeight
+    // Center-crop to square
+    let sx, sy, sw, sh
+    if (iw > ih) { sw = ih; sh = ih; sx = (iw - ih) / 2; sy = 0 }
+    else         { sw = iw; sh = iw; sx = 0; sy = (ih - iw) / 2 }
+
+    ctx.beginPath()
+    ctx.roundRect(-half, -half, size, size, r)
+    ctx.clip()
+    ctx.drawImage(photo, sx, sy, sw, sh, -half, -half, size, size)
+  } else {
+    ctx.beginPath()
+    ctx.roundRect(-half, -half, size, size, r)
+    ctx.fillStyle = '#1a1a1a'
+    ctx.fill()
+    ctx.fillStyle = 'rgba(255,255,255,0.18)'
+    ctx.font = `500 ${Math.max(8, Math.round(size * 0.3))}px "IBM Plex Mono", monospace`
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText('M', 0, 0)
+  }
+
+  ctx.restore()
 }
 
-// ─── Render one frame to a canvas ────────────────────────────────────────────
+// ── renderTo ─────────────────────────────────────────────────────────────────
 
 function renderTo(target, photos, frame, bgColor, layers) {
   const ctx  = target.getContext('2d')
   const W    = target.width
   const H    = target.height
-  const N    = layers.length
   const fMod = ((frame % TOTAL_F) + TOTAL_F) % TOTAL_F
 
   ctx.fillStyle = bgColor || '#000'
   ctx.fillRect(0, 0, W, H)
 
-  // Group rotates −720° over TOTAL_F
-  const groupRot = (GROUP_ROT * Math.PI / 180) * (fMod / TOTAL_F)
+  const minDim = Math.min(W, H)
 
-  const S = Math.min(W, H)  // reference size
+  // Group rotation: linear −720° over TOTAL_F
+  const groupAngleRad = (GROUP_ROT_DEG * Math.PI / 180) * (fMod / TOTAL_F)
 
-  // Draw back-to-front: innermost (small) first, outermost on top
-  for (let li = N - 1; li >= 0; li--) {
-    const layer  = layers[li]
-    const { scale, opacity } = getLayerState(layer, fMod)
-    if (opacity < 0.5) continue
+  // All cards share the same fixed orbit radius
+  const orbitRadius = minDim * ORBIT_R_NORM
+  // Base card size at 100% scale
+  const baseCardSize = minDim * BASE_CARD_NORM
+
+  // Draw order: smallest initScalePercent first (inner cards behind outer cards)
+  const sorted = [...layers].sort((a, b) => a.initScalePercent - b.initScalePercent)
+
+  for (const layer of sorted) {
+    const { scalePercent, opacity } = getLayerState(layer, fMod)
+    if (opacity <= 0.005) continue
 
     const photo = photos.length > 0 ? photos[layer.i % photos.length] : null
 
-    // radFrac: 0 = innermost (layer.i = N-1), 1 = outermost (layer.i = 0)
-    const radFrac = N > 1 ? 1 - layer.i / (N - 1) : 0.5
+    // Card's total angle = fixed rotation offset + group rotation
+    const totalAngle = layer.rotOffsetDeg * Math.PI / 180 + groupAngleRad
 
-    // Orbital radius and base tile size for this layer
-    const orbitR   = S * (ORBIT_R_INNER + radFrac * (ORBIT_R_OUTER - ORBIT_R_INNER))
-    const tileSize = S * (TILE_INNER    + radFrac * (TILE_OUTER    - TILE_INNER))
+    // Card center — ALL cards orbit at the same radius
+    const cardX = W / 2 + Math.cos(totalAngle) * orbitRadius
+    const cardY = H / 2 + Math.sin(totalAngle) * orbitRadius
 
-    // Angular position = fixed layer angle + group rotation
-    const theta = layer.angleOffset * Math.PI / 180 + groupRot
+    // Card size in pixels: base × (scalePercent / 100)
+    // At 820%: fills and overflows canvas. At 100%: small thumbnail.
+    const cardSize = baseCardSize * (scalePercent / 100)
 
-    // Orbital center in canvas space
-    const cx = W / 2 + orbitR * Math.cos(theta)
-    const cy = H / 2 + orbitR * Math.sin(theta)
+    // Blur inner (dim) cards proportional to how small their initScale is
+    const blurPx = Math.max(0, (1.0 - layer.initScalePercent / SCALE_MAX_INIT) * 8)
+    if (blurPx > 0.5) ctx.filter = `blur(${blurPx.toFixed(1)}px)`
 
-    // Derive draw size, position, and tilt from scale animation
-    let drawSize, drawX, drawY, tilt
+    drawCard(ctx, photo, cardX, cardY, cardSize, opacity, totalAngle)
 
-    if (scale >= layer.initScale) {
-      // Growing toward peak: tile zooms to full canvas, drifts to canvas center
-      const t   = Math.min(1, (scale - layer.initScale) / Math.max(PEAK_S - layer.initScale, 1))
-      drawSize  = tileSize + t * (S - tileSize)
-      drawX     = cx + t * (W / 2 - cx)
-      drawY     = cy + t * (H / 2 - cy)
-      tilt      = (1 - t) * layer.angleOffset * Math.PI / 180  // un-tilts as it fills canvas
-    } else {
-      // Regrow: post-snap tiny tile grows back to orbital size
-      const snapSize = S * SNAP_TILE
-      const t   = Math.min(1, Math.max(0, (scale - SNAP_S) / Math.max(layer.initScale - SNAP_S, 1)))
-      drawSize  = snapSize + t * (tileSize - snapSize)
-      drawX     = cx
-      drawY     = cy
-      tilt      = layer.angleOffset * Math.PI / 180
-    }
-
-    ctx.save()
-    ctx.globalAlpha = Math.max(0, Math.min(1, opacity / 100))
-    ctx.translate(drawX, drawY)
-    ctx.rotate(tilt)
-
-    if (photo) {
-      drawCoverFit(ctx, photo, -drawSize / 2, -drawSize / 2, drawSize, drawSize)
-    } else {
-      // Placeholder tile
-      ctx.fillStyle = '#111110'
-      ctx.fillRect(-drawSize / 2, -drawSize / 2, drawSize, drawSize)
-      ctx.fillStyle = 'rgba(255,255,255,0.15)'
-      ctx.font = `bold ${Math.round(drawSize * 0.35)}px "IBM Plex Mono", monospace`
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.fillText('M', 0, 0)
-    }
-
-    ctx.restore()
+    if (blurPx > 0.5) ctx.filter = 'none'
   }
 }
 
-// ─── Public factory ───────────────────────────────────────────────────────────
+// ── Public factory ────────────────────────────────────────────────────────────
 
 export function createSpiralRenderer(canvas, options = {}) {
   let bgColor = options.bgColor ?? '#0d0d0d'
@@ -190,7 +193,7 @@ export function createSpiralRenderer(canvas, options = {}) {
   let cachedLayers = []
 
   function getLayers() {
-    const N = photos.length > 0 ? photos.length : 6
+    const N = photos.length > 0 ? photos.length : 8
     if (N !== cachedN) { cachedLayers = buildLayers(N); cachedN = N }
     return cachedLayers
   }
