@@ -11,7 +11,7 @@ const EXIT_END   = 0.80  // cycle fraction where front card fully exits
 const ADV_START  = 0.45  // cycle fraction where rear cards start advancing
 
 function easeIn(t)         { return t * t }
-function easeOut(t)        { return 1 - (1 - t) * (1 - t) }
+function easeOutCubic(t)   { return 1 - (1 - t) ** 3 }  // softer deceleration into landing
 function lerp(a, b, t)     { return a + (b - a) * t }
 function clamp(v, lo, hi)  { return Math.max(lo, Math.min(hi, v)) }
 
@@ -37,7 +37,41 @@ function drawStack(ctx, imgs, W, H, cx, stackClock, cornerFraction) {
   const cycleN   = Math.floor(stackClock)
   const t        = stackClock - cycleN  // 0..1 within current cycle
 
-  // Draw back→front so front card appears on top
+  // ── Incoming card: rises from below depth-3 in sync with the exit ──────────
+  if (t > ADV_START) {
+    const newIdx = ((cycleN + QUEUE_SIZE) % imgs.length + imgs.length) % imgs.length
+    const newImg = imgs[newIdx]
+    if (newImg) {
+      const at      = clamp((t - ADV_START) / (1 - ADV_START), 0, 1)
+      const aa      = easeOutCubic(at)
+      const destY   = cy + DEPTH_Y_OFFSETS[3] * cardSize
+      const yCenter = lerp(destY + cardSize * 0.55, destY, aa)
+      const alpha   = lerp(0, DEPTH_OPACITIES[3], aa)
+      const scale   = DEPTH_SCALES[3]
+      const w       = cardSize * scale
+      const h       = cardSize * scale
+      const r       = Math.round(Math.min(w, h) * cornerFraction)
+      ctx.save()
+      ctx.globalAlpha = alpha
+      ctx.translate(cx, yCenter)
+      ctx.beginPath()
+      if (r > 0) {
+        const x = -w / 2; const y = -h / 2
+        ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y)
+        ctx.arcTo(x + w, y, x + w, y + r, r); ctx.lineTo(x + w, y + h - r)
+        ctx.arcTo(x + w, y + h, x + w - r, y + h, r); ctx.lineTo(x + r, y + h)
+        ctx.arcTo(x, y + h, x, y + h - r, r); ctx.lineTo(x, y + r)
+        ctx.arcTo(x, y, x + r, y, r); ctx.closePath()
+      } else {
+        ctx.rect(-w / 2, -h / 2, w, h)
+      }
+      ctx.clip()
+      drawImageCover(ctx, newImg, -w / 2, -h / 2, w, h)
+      ctx.restore()
+    }
+  }
+
+  // ── Stack cards back→front so front card appears on top ──────────────────
   for (let d = QUEUE_SIZE - 1; d >= 0; d--) {
     const idx = ((cycleN + d) % imgs.length + imgs.length) % imgs.length
     const img = imgs[idx]
@@ -62,7 +96,7 @@ function drawStack(ctx, imgs, W, H, cx, stackClock, cornerFraction) {
     } else if (d > 0 && t > ADV_START) {
       // Rear cards advance upward toward front
       const at  = clamp((t - ADV_START) / (1 - ADV_START), 0, 1)
-      const aa  = easeOut(at)
+      const aa  = easeOutCubic(at)
       const tY  = cy + DEPTH_Y_OFFSETS[d - 1] * cardSize
       const tSc = DEPTH_SCALES[d - 1]
       const tAl = DEPTH_OPACITIES[d - 1]
