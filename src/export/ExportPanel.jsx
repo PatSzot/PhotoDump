@@ -14,6 +14,7 @@ export default function ExportPanel({
   bgColor, onBgChange,
   controls, onControlsChange,
   photoCount = 0,
+  exportFormat,
 }) {
   function setCtrl(key, val) {
     onControlsChange({ ...controls, [key]: val })
@@ -33,6 +34,23 @@ export default function ExportPanel({
     <div>
       {/* Photo count */}
       <PhotoCount count={photoCount} />
+
+      {/* Format hints (non-scape only) */}
+      {!isScape && isMainStage && exportFormat !== 'portrait' && (
+        <p className="ep-photo-count" style={{ color: 'rgba(240,180,80,0.7)' }}>
+          Best with Portrait (9:16) format
+        </p>
+      )}
+      {!isScape && isSpiral && exportFormat !== 'square' && (
+        <p className="ep-photo-count" style={{ color: 'rgba(240,180,80,0.7)' }}>
+          Spiral is designed for 1:1 square format
+        </p>
+      )}
+      {!isScape && isPhotoBooth && exportFormat === 'landscape' && (
+        <p className="ep-photo-count" style={{ color: 'rgba(240,180,80,0.7)' }}>
+          Best with Square or Portrait format
+        </p>
+      )}
 
       {/* Background */}
       <div style={{ marginBottom: 4 }}>
