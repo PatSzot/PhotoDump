@@ -85,8 +85,11 @@ export function createPhotoBoothRenderer(photos) {
     const { stripX, stripY, stripW, stripH, framePad, gap, photoW, photoH } = getLayout(cw, ch)
 
     // Draw frame
+    const r = Math.round(stripW * 0.06)
     ctx.fillStyle = frameColor
-    ctx.fillRect(stripX, stripY, stripW, stripH)
+    ctx.beginPath()
+    ctx.roundRect(stripX, stripY, stripW, stripH, r)
+    ctx.fill()
 
     // Fill 3 photo slots
     const available = loaded.filter(Boolean)
