@@ -69,7 +69,7 @@ function makePlaceholderTex() {
   const canvas = document.createElement('canvas')
   canvas.width = size; canvas.height = size
   const ctx = canvas.getContext('2d')
-  ctx.fillStyle = '#1a1a1a'
+  ctx.fillStyle = '#1d1a12'
   ctx.fillRect(0, 0, size, size)
   ctx.fillStyle = 'rgba(255,255,255,0.18)'
   ctx.font = `500 ${Math.round(size * 0.3)}px "IBM Plex Mono", monospace`

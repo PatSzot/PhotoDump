@@ -2,7 +2,7 @@ import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
 import { initScapeScene } from '../lib/scapeScene.js'
 
 const ScapeCanvas = forwardRef(function ScapeCanvas(
-  { photos = [], bgColor = '#0d0d0d', presetId = 'sphere', controls = {}, loopS = 8 },
+  { photos = [], bgColor = '#0e0c08', presetId = 'sphere', controls = {}, loopS = 8 },
   ref,
 ) {
   const containerRef   = useRef(null)

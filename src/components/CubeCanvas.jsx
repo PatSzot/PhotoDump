@@ -2,7 +2,7 @@ import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
 import { initCubeScene } from '../lib/cubeScene.js'
 
 const CubeCanvas = forwardRef(function CubeCanvas(
-  { photos = [], bgColor = '#0d0d0d', loopS = 8 },
+  { photos = [], bgColor = '#0e0c08', loopS = 8 },
   ref,
 ) {
   const containerRef = useRef(null)

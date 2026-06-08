@@ -113,7 +113,7 @@ function drawCard(ctx, photo, cx, cy, size, opacity, tiltAngle) {
   } else {
     ctx.beginPath()
     ctx.roundRect(-half, -half, size, size, r)
-    ctx.fillStyle = '#1a1a1a'
+    ctx.fillStyle = '#1d1a12'
     ctx.fill()
     ctx.fillStyle = 'rgba(255,255,255,0.18)'
     ctx.font = `500 ${Math.max(8, Math.round(size * 0.3))}px "IBM Plex Mono", monospace`
@@ -179,7 +179,7 @@ function renderTo(target, photos, frame, bgColor, layers) {
 // ── Public factory ────────────────────────────────────────────────────────────
 
 export function createSpiralRenderer(canvas, options = {}) {
-  let bgColor = options.bgColor ?? '#0d0d0d'
+  let bgColor = options.bgColor ?? '#0e0c08'
   let speed   = options.speed   ?? 1.0
   let photos  = options.photos  ?? []
 

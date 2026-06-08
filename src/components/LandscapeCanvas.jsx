@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { initScene } from '../scene/index.js'
 
-export default function LandscapeCanvas({ images, corner = 0, bgColor = '#0d0d0d', onSceneReady }) {
+export default function LandscapeCanvas({ images, corner = 0, bgColor = '#0e0c08', onSceneReady }) {
   const containerRef = useRef(null)
   const sceneRef     = useRef(null)
   // Track latest values so we can apply them once async init finishes

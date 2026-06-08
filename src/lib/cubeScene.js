@@ -40,7 +40,7 @@ function makePlaceholderTex(index) {
   const canvas = document.createElement('canvas')
   canvas.width = size; canvas.height = size
   const ctx    = canvas.getContext('2d')
-  const colors = ['#1a1a2e', '#16213e', '#0f3460', '#533483', '#222831', '#393e46']
+  const colors = ['#1a1208', '#241a09', '#2d2212', '#1e1a0c', '#302817', '#261e10']
   ctx.fillStyle = colors[index % colors.length]
   ctx.fillRect(0, 0, size, size)
   ctx.fillStyle = 'rgba(255,255,255,0.15)'
@@ -75,7 +75,7 @@ export async function initCubeScene(container, photos = [], loopDuration = 8) {
 
   // ── Scene + camera ──────────────────────────────────────────────────────────
   const scene  = new THREE.Scene()
-  scene.background = new THREE.Color('#0d0d0d')
+  scene.background = new THREE.Color('#0e0c08')
 
   const camera = new THREE.PerspectiveCamera(45, cw / ch, 0.1, 100)
   camera.position.set(0, 0.5, 3.8)
@@ -146,7 +146,7 @@ export async function initCubeScene(container, photos = [], loopDuration = 8) {
   ro.observe(container)
 
   // ── Stored bg color for restore ─────────────────────────────────────────────
-  let savedBg = '#0d0d0d'
+  let savedBg = '#0e0c08'
 
   // ── Public interface ─────────────────────────────────────────────────────────
   return {

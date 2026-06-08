@@ -88,7 +88,7 @@ function renderAt(canvas, imgEls, clock, bgColor) {
   const H   = canvas.height
   const N   = imgEls.length
 
-  ctx.fillStyle = bgColor || '#000000'
+  ctx.fillStyle = bgColor || '#0e0c08'
   ctx.fillRect(0, 0, W, H)
   if (!N) return
 
@@ -127,7 +127,7 @@ function renderAt(canvas, imgEls, clock, bgColor) {
 // ─── Public factory ────────────────────────────────────────────────────────────
 
 export function createMainStageRenderer(canvas, options = {}) {
-  let { photos = [], bgColor = '#000000', speed = 1.0 } = options
+  let { photos = [], bgColor = '#0e0c08', speed = 1.0 } = options
 
   let imgEls = []
   let clock  = TRANS_F / STAGGER  // start in hold phase (first photo already on screen)

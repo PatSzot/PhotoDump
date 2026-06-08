@@ -97,7 +97,7 @@ export default function ExportPanel({
               }}
             >
               {PRESETS.map(p => (
-                <option key={p.key} value={p.key} style={{ background: '#1a1a16' }}>{p.label}</option>
+                <option key={p.key} value={p.key} style={{ background: '#1a1812' }}>{p.label}</option>
               ))}
             </select>
             <span style={{

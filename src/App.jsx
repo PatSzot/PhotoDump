@@ -113,7 +113,7 @@ export default function App() {
   const [mode, setMode] = useState('explore')
 
   // Export state
-  const [bgColor,      setBgColor]      = useState('#0d0d0d')
+  const [bgColor,      setBgColor]      = useState('#0e0c08')
   const [exportFormat, setExportFormat] = useState('square')
   const [fps,          setFps]          = useState(30)
   const [loopS,        setLoopS]        = useState(8.0)

@@ -76,7 +76,7 @@ export function createPhotoBoothRenderer(photos) {
     const ctx = canvas.getContext('2d')
     const cw  = canvas.width
     const ch  = canvas.height
-    const bg  = bgColor || '#0d0d0d'
+    const bg  = bgColor || '#0e0c08'
 
     ctx.fillStyle = bg
     ctx.fillRect(0, 0, cw, ch)

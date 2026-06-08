@@ -2,7 +2,7 @@ import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
 import { createPhotoBoothRenderer } from '../lib/photoBoothRenderer.js'
 
 const PhotoBoothCanvas = forwardRef(function PhotoBoothCanvas(
-  { photos = [], bgColor = '#0d0d0d' },
+  { photos = [], bgColor = '#0e0c08' },
   ref,
 ) {
   const canvasRef   = useRef(null)
