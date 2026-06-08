@@ -12,6 +12,7 @@ const PRESETS = [
   { key: 'mainStage',  label: 'Main Stage'  },
   { key: 'spiral',     label: 'Spiral'      },
   { key: 'photoBooth', label: 'Photo Booth' },
+  { key: 'cube',       label: 'Cube'        },
 ]
 
 function PhotoCount({ count, isShuffle }) {
@@ -38,11 +39,12 @@ export default function ExportPanel({
     onControlsChange({ ...controls, [key]: val })
   }
 
-  const isShuffle   = presetId === 'shuffle'
-  const isMainStage = presetId === 'mainStage'
-  const isSpiral    = presetId === 'spiral'
+  const isShuffle    = presetId === 'shuffle'
+  const isMainStage  = presetId === 'mainStage'
+  const isSpiral     = presetId === 'spiral'
   const isPhotoBooth = presetId === 'photoBooth'
-  const is2D        = isShuffle || isMainStage || isSpiral || isPhotoBooth
+  const isCube       = presetId === 'cube'
+  const is2D         = isShuffle || isMainStage || isSpiral || isPhotoBooth
 
   return (
     <div>
@@ -108,8 +110,8 @@ export default function ExportPanel({
         <BgToggle bgColor={bgColor} onBgChange={onBgChange} />
       </div>
 
-      {/* Composition — hidden for Photo Booth (static preset, no controls) */}
-      {!isPhotoBooth && (
+      {/* Composition — hidden for Photo Booth and Cube */}
+      {!isPhotoBooth && !isCube && (
         <>
           <h3 className="ep-section">Composition</h3>
           <div className="ep-panel">

@@ -6,6 +6,7 @@ import MainStageCanvas from './components/MainStageCanvas.jsx'
 import SpiralCanvas from './components/SpiralCanvas.jsx'
 import ScapeCanvas from './components/ScapeCanvas.jsx'
 import PhotoBoothCanvas from './components/PhotoBoothCanvas.jsx'
+import CubeCanvas from './components/CubeCanvas.jsx'
 import LeftPanel from './components/LeftPanel.jsx'
 import RightPanel from './components/RightPanel.jsx'
 import ExportDock, { FORMATS } from './components/ExportDock.jsx'
@@ -100,6 +101,7 @@ export default function App() {
   const spiralCanvasRef    = useRef(null)
   const scapeCanvasRef      = useRef(null)
   const photoBoothCanvasRef = useRef(null)
+  const cubeCanvasRef       = useRef(null)
   const canvasAreaRef    = useRef(null)
 
   // Core state
@@ -177,6 +179,7 @@ export default function App() {
         if      (presetId === 'spiral')             spiralCanvasRef.current?.togglePause()
         else if (presetId === 'mainStage')          mainStageCanvasRef.current?.togglePause()
         else if (presetId === 'shuffle')            shuffleCanvasRef.current?.togglePause()
+        else if (presetId === 'cube')               cubeCanvasRef.current?.togglePause()
         else if (PRESET_IDS.includes(presetId))     scapeCanvasRef.current?.togglePause()
         else                                        sceneRef.current?.togglePause()
       }
@@ -254,6 +257,7 @@ export default function App() {
     const isMainStage    = presetId === 'mainStage'
     const isSpiral       = presetId === 'spiral'
     const isPhotoBooth   = presetId === 'photoBooth'
+    const isCube         = presetId === 'cube'
     const is3DPreset     = PRESET_IDS.includes(presetId)
     const is2D           = isShuffle || isMainStage || isSpiral
     const scapeScene          = is3DPreset    ? scapeCanvasRef.current?.getScene()             : null
@@ -261,12 +265,13 @@ export default function App() {
     const mainStageRenderer   = isMainStage   ? mainStageCanvasRef.current?.getRenderer()     : null
     const spiralRenderer      = isSpiral      ? spiralCanvasRef.current?.getRenderer()        : null
     const photoBoothRenderer  = isPhotoBooth  ? photoBoothCanvasRef.current?.getRenderer()   : null
-    if (!scapeScene && !shuffleRenderer && !mainStageRenderer && !spiralRenderer && !photoBoothRenderer) return
+    const cubeScene           = isCube        ? cubeCanvasRef.current?.getScene()             : null
+    if (!scapeScene && !shuffleRenderer && !mainStageRenderer && !spiralRenderer && !photoBoothRenderer && !cubeScene) return
     setIsExporting(true)
     setExportPct(0)
     try {
       await exportVideo({
-        scapeScene,
+        scapeScene: scapeScene || cubeScene,
         scene: null,
         shuffleRenderer,
         mainStageRenderer,
@@ -295,6 +300,7 @@ export default function App() {
   const showSpiral     = isExport && presetId === 'spiral'
   const showScape      = isExport && PRESET_IDS.includes(presetId)
   const showPhotoBooth = isExport && presetId === 'photoBooth'
+  const showCube       = isExport && presetId === 'cube'
   // In export mode, fall back to the MYSCAPE letter photos when no user photos are loaded
   const exportImages = images.length > 0 ? images : DEFAULT_EXPORT_IMAGES
 
@@ -342,7 +348,7 @@ export default function App() {
             : { position: 'absolute', inset: 0 }
           }
         >
-          <div style={{ position: 'absolute', inset: 0, display: (showShuffle || showMainStage || showSpiral || showScape || showPhotoBooth) ? 'none' : 'block' }}>
+          <div style={{ position: 'absolute', inset: 0, display: (showShuffle || showMainStage || showSpiral || showScape || showPhotoBooth || showCube) ? 'none' : 'block' }}>
             <LandscapeCanvas
               images={isExport ? exportImages : images}
               corner={corner}
@@ -397,6 +403,16 @@ export default function App() {
                 ref={photoBoothCanvasRef}
                 photos={exportImages}
                 bgColor={bgColor}
+              />
+            </div>
+          )}
+          {showCube && (
+            <div style={{ position: 'absolute', inset: 0 }}>
+              <CubeCanvas
+                ref={cubeCanvasRef}
+                photos={exportImages}
+                bgColor={bgColor}
+                loopS={loopS}
               />
             </div>
           )}

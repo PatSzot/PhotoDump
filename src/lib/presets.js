@@ -125,8 +125,9 @@ export const PRESET_LAYOUTS = {
 export const PRESET_IDS = ['sphere', 'ring', 'helix', 'flow']
 
 export const PRESET_DEFAULTS = {
-  sphere: { count: 35, zoom: 1.0, radius: 1.0, scale: 0.8, corners: 0.08, speed: 1.0 },
-  ring:   { count: 35, zoom: 1.0, radius: 1.0, scale: 0.8, corners: 0.08, speed: 1.0 },
-  helix:  { count: 35, zoom: 1.0, radius: 1.0, scale: 0.8, corners: 0.08, speed: 1.0 },
-  flow:   { count: 35, zoom: 1.0, radius: 1.0, scale: 0.8, corners: 0.08, speed: 1.0 },
+  sphere:     { count: 35, zoom: 1.0, radius: 1.0, scale: 0.8, corners: 0.08, speed: 1.0 },
+  ring:       { count: 35, zoom: 1.0, radius: 1.0, scale: 0.8, corners: 0.08, speed: 1.0 },
+  helix:      { count: 35, zoom: 1.0, radius: 1.0, scale: 0.8, corners: 0.08, speed: 1.0 },
+  flow:       { count: 35, zoom: 1.0, radius: 1.0, scale: 0.8, corners: 0.08, speed: 1.0 },
+  cube:       {},
 }
