@@ -2,7 +2,7 @@ import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
 import { initCubeScene } from '../lib/cubeScene.js'
 
 const CubeCanvas = forwardRef(function CubeCanvas(
-  { photos = [], bgColor = '#0e0c08', loopS = 8 },
+  { photos = [], bgColor = '#0e0c08', loopS = 8, faces = 6 },
   ref,
 ) {
   const containerRef = useRef(null)
@@ -12,7 +12,7 @@ const CubeCanvas = forwardRef(function CubeCanvas(
     let mounted = true
     const container = containerRef.current
 
-    initCubeScene(container, photos, loopS).then(scene => {
+    initCubeScene(container, photos, loopS, faces).then(scene => {
       if (!mounted) { scene.cleanup(); return }
       sceneRef.current = scene
       scene.setBgColor(bgColor)
@@ -25,9 +25,10 @@ const CubeCanvas = forwardRef(function CubeCanvas(
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { sceneRef.current?.setBgColor(bgColor) }, [bgColor])
-  useEffect(() => { sceneRef.current?.setLoopDuration(loopS) }, [loopS])
-  useEffect(() => { sceneRef.current?.setPhotos(photos) }, [photos])
+  useEffect(() => { sceneRef.current?.setBgColor(bgColor) },          [bgColor])
+  useEffect(() => { sceneRef.current?.setLoopDuration(loopS) },       [loopS])
+  useEffect(() => { sceneRef.current?.setPhotos(photos) },            [photos])
+  useEffect(() => { sceneRef.current?.setFaces(faces) },              [faces])
 
   useImperativeHandle(ref, () => ({
     togglePause() { sceneRef.current?.togglePause() },

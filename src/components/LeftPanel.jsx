@@ -15,7 +15,7 @@ const PRESETS = [
   { key: 'mainStage',  label: 'Main Stage',   share: false },
   { key: 'spiral',     label: 'Spiral',       share: false },
   { key: 'photoBooth', label: 'Photo Booth',  share: false },
-  { key: 'cube',       label: 'Cube',         share: true  },
+  { key: 'dice',       label: 'Dice',         share: true  },
 ]
 
 export default function LeftPanel({

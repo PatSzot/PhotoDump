@@ -122,7 +122,7 @@ export default function App() {
   const [previewDims,    setPreviewDims]    = useState({ width: 800, height: 800 })
 
   const isLandscape  = presetId === 'landscape'
-  const isCube       = presetId === 'cube'
+  const isCube       = presetId === 'dice'
   const useShareDock = isLandscape || isCube
 
   // ── Body background ────────────────────────────────────────────────────────
@@ -178,7 +178,7 @@ export default function App() {
         if      (presetId === 'spiral')           spiralCanvasRef.current?.togglePause()
         else if (presetId === 'mainStage')        mainStageCanvasRef.current?.togglePause()
         else if (presetId === 'shuffle')          shuffleCanvasRef.current?.togglePause()
-        else if (presetId === 'cube')             cubeCanvasRef.current?.togglePause()
+        else if (presetId === 'dice')             cubeCanvasRef.current?.togglePause()
         else if (PRESET_IDS.includes(presetId))  scapeCanvasRef.current?.togglePause()
       }
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
@@ -258,7 +258,7 @@ export default function App() {
     const isMainStage   = presetId === 'mainStage'
     const isSpiral      = presetId === 'spiral'
     const isPhotoBooth  = presetId === 'photoBooth'
-    const isCube        = presetId === 'cube'
+    const isCube        = presetId === 'dice'
     const is3DPreset    = PRESET_IDS.includes(presetId)
     const scapeScene         = is3DPreset   ? scapeCanvasRef.current?.getScene()           : null
     const shuffleRenderer    = isShuffle    ? shuffleCanvasRef.current?.getRenderer()      : null
@@ -419,6 +419,7 @@ export default function App() {
                 photos={displayImages}
                 bgColor={bgColor}
                 loopS={loopS}
+                faces={exportControls.faces ?? 6}
               />
             </div>
           )}

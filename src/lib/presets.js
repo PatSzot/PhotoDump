@@ -134,5 +134,5 @@ export const PRESET_DEFAULTS = {
   mainStage:  { speed: 1.0 },
   spiral:     { speed: 1.0 },
   photoBooth: {},
-  cube:       {},
+  dice:       { faces: 6 },
 }

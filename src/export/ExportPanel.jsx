@@ -27,10 +27,11 @@ export default function ExportPanel({
   const isMainStage  = presetId === 'mainStage'
   const isSpiral     = presetId === 'spiral'
   const isPhotoBooth = presetId === 'photoBooth'
-  const isCube       = presetId === 'cube'
+  const isCube       = presetId === 'dice'
   const is2D         = isShuffle || isMainStage || isSpiral || isPhotoBooth
 
-  const showComposition = !isPhotoBooth && !isCube
+  const isDice          = presetId === 'dice'
+  const showComposition = !isPhotoBooth && !isDice
 
   return (
     <div>
@@ -90,8 +91,25 @@ export default function ExportPanel({
           </div>
         </>
       )}
-      {/* Video Length — non-scape only */}
-      {!isLandscape && (
+      {/* Dice — faces control */}
+      {isDice && (
+        <>
+          <h3 className="ep-section">Dice</h3>
+          <div className="ep-panel">
+            <NumberField
+              label="Faces"
+              value={controls.faces ?? 6}
+              min={4}
+              max={20}
+              step={1}
+              onChange={v => setCtrl('faces', Math.round(v))}
+            />
+          </div>
+        </>
+      )}
+
+      {/* Video Length — non-landscape only */}
+      {!isLandscape && !isDice && (
         <>
           <h3 className="ep-section">Video Length</h3>
           <div className="ep-panel">
