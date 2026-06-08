@@ -15,16 +15,35 @@ const PRESETS = [
   { key: 'cube',       label: 'Cube'        },
 ]
 
-function PhotoCount({ count, isShuffle }) {
-  let text
-  if (count === 0) {
-    text = 'No photos · drop images to begin'
-  } else if (isShuffle) {
-    text = `${count} photo${count !== 1 ? 's' : ''} loaded`
-  } else {
-    text = `${count} photo${count !== 1 ? 's' : ''} loaded`
-  }
+function PhotoCount({ count }) {
+  const text = count === 0
+    ? 'No photos · drop images to begin'
+    : `${count} photo${count !== 1 ? 's' : ''} loaded`
   return <p className="ep-photo-count">{text}</p>
+}
+
+function StyleToggleRow({ label, on, onClick }) {
+  return (
+    <div
+      className="ep-style-row"
+      onClick={onClick}
+      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 36, cursor: 'pointer' }}
+    >
+      <span className="ep-field-label">{label}</span>
+      <div style={{
+        width: 32, height: 18, borderRadius: 9, flexShrink: 0, position: 'relative',
+        background: on ? 'rgba(240,237,228,0.9)' : 'rgba(255,255,255,0.14)',
+        transition: 'background 0.2s',
+      }}>
+        <div style={{
+          position: 'absolute', top: 2, width: 14, height: 14, borderRadius: '50%',
+          background: on ? '#191812' : 'rgba(255,255,255,0.5)',
+          transform: on ? 'translateX(16px)' : 'translateX(2px)',
+          transition: 'transform 0.2s',
+        }} />
+      </div>
+    </div>
+  )
 }
 
 export default function ExportPanel({
@@ -34,6 +53,8 @@ export default function ExportPanel({
   loopS, onLoopChange,
   photoCount = 0,
   exportFormat,
+  corner = 0, onCornerChange,
+  theme = 'dark', onThemeChange,
 }) {
   function setCtrl(key, val) {
     onControlsChange({ ...controls, [key]: val })
@@ -45,6 +66,12 @@ export default function ExportPanel({
   const isPhotoBooth = presetId === 'photoBooth'
   const isCube       = presetId === 'cube'
   const is2D         = isShuffle || isMainStage || isSpiral || isPhotoBooth
+
+  function toggleCorners() {
+    const newOn = corner <= 0
+    onCornerChange?.(newOn ? 0.04 : 0)
+    setCtrl('corners', newOn ? 0.08 : 0)
+  }
 
   return (
     <div>
@@ -103,7 +130,7 @@ export default function ExportPanel({
       )}
 
       {/* Photo count */}
-      <PhotoCount count={photoCount} isShuffle={isShuffle} />
+      <PhotoCount count={photoCount} />
 
       {/* Background */}
       <div style={{ marginBottom: 4 }}>
@@ -147,6 +174,21 @@ export default function ExportPanel({
       <div className="ep-panel">
         <NumberField label="Loop" value={loopS} min={1} max={24} step={0.1} onChange={onLoopChange} unit=" s" />
         <LoopTimeline loopS={loopS} />
+      </div>
+
+      {/* Style */}
+      <h3 className="ep-section">Style</h3>
+      <div className="ep-panel">
+        <StyleToggleRow
+          label="Rounded Corners"
+          on={corner > 0}
+          onClick={toggleCorners}
+        />
+        <StyleToggleRow
+          label="Dark Mode"
+          on={theme === 'dark'}
+          onClick={() => onThemeChange?.(theme === 'dark' ? 'light' : 'dark')}
+        />
       </div>
     </div>
   )

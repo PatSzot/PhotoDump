@@ -327,9 +327,6 @@ export default function App() {
           corner={corner} onCornerChange={setCorner}
           images={images}
           onUploadClick={() => photoInputRef.current?.click()}
-          onDelete={handleDelete}
-          onRotate={handleRotate}
-          onShare={handleCopyLink}
           mode={mode}     onModeChange={setMode}
           presetId={presetId}       onPresetChange={handlePresetChange}
           bgColor={bgColor}         onBgChange={setBgColor}
