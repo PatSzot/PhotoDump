@@ -109,8 +109,8 @@ export default function App() {
 
   // Canvas / preset state
   const [bgColor,        setBgColor]        = useState('#0e0c08')
-  const [presetId,       setPresetId]       = useState('scape')
-  const [exportControls, setExportControls] = useState(PRESET_DEFAULTS['scape'])
+  const [presetId,       setPresetId]       = useState('landscape')
+  const [exportControls, setExportControls] = useState(PRESET_DEFAULTS['landscape'])
 
   // Export state (non-scape presets)
   const [exportFormat,   setExportFormat]   = useState('square')
@@ -121,7 +121,7 @@ export default function App() {
   const [imageModalOpen, setImageModalOpen] = useState(false)
   const [previewDims,    setPreviewDims]    = useState({ width: 800, height: 800 })
 
-  const isScape = presetId === 'scape'
+  const isLandscape = presetId === 'landscape'
 
   // ── Body background ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -130,7 +130,7 @@ export default function App() {
 
   // ── Preview canvas dimensions (non-scape presets) ─────────────────────────
   useEffect(() => {
-    if (isScape) return
+    if (isLandscape) return
     const el = canvasAreaRef.current
     if (!el) return
     function compute() {
@@ -148,7 +148,7 @@ export default function App() {
     const ro = new ResizeObserver(compute)
     ro.observe(el)
     return () => ro.disconnect()
-  }, [isScape, exportFormat])
+  }, [isLandscape, exportFormat])
 
   // ── Load shared scape ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -294,7 +294,7 @@ export default function App() {
   const panelBg = theme === 'dark' ? '#191812' : '#F0EDE4'
 
   // Canvas routing
-  const showLandscape  = isScape || VIEW_MODE
+  const showLandscape  = isLandscape || VIEW_MODE
   const show3DScape    = !VIEW_MODE && PRESET_IDS.includes(presetId)
   const showShuffle    = !VIEW_MODE && presetId === 'shuffle'
   const showMainStage  = !VIEW_MODE && presetId === 'mainStage'
@@ -338,8 +338,8 @@ export default function App() {
       <div className="canvas-area" ref={canvasAreaRef}>
         {/* Scape: full-screen canvas. Others: aspect-ratio constrained. */}
         <div
-          className={!isScape && !VIEW_MODE ? 'export-canvas-wrapper' : undefined}
-          style={!isScape && !VIEW_MODE
+          className={!isLandscape && !VIEW_MODE ? 'export-canvas-wrapper' : undefined}
+          style={!isLandscape && !VIEW_MODE
             ? { width: previewDims.width, height: previewDims.height }
             : { position: 'absolute', inset: 0 }
           }
@@ -443,11 +443,11 @@ export default function App() {
         )}
       </div>
 
-      {!VIEW_MODE && isScape && (
+      {!VIEW_MODE && isLandscape && (
         <ShareDock onShare={handleCopyLink} />
       )}
 
-      {!VIEW_MODE && !isScape && (
+      {!VIEW_MODE && !isLandscape && (
         <>
           <div className="kb-overlay" aria-hidden="true">
             <span className="kb-shortcut">

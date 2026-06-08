@@ -22,7 +22,7 @@ export default function ExportPanel({
     onControlsChange({ ...controls, [key]: val })
   }
 
-  const isScape      = presetId === 'scape'
+  const isLandscape      = presetId === 'landscape'
   const isShuffle    = presetId === 'shuffle'
   const isMainStage  = presetId === 'mainStage'
   const isSpiral     = presetId === 'spiral'
@@ -38,17 +38,17 @@ export default function ExportPanel({
       <PhotoCount count={photoCount} />
 
       {/* Format hints (non-scape only) */}
-      {!isScape && isMainStage && exportFormat !== 'portrait' && (
+      {!isLandscape && isMainStage && exportFormat !== 'portrait' && (
         <p className="ep-photo-count" style={{ color: 'rgba(240,180,80,0.7)' }}>
           Best with Portrait (9:16) format
         </p>
       )}
-      {!isScape && isSpiral && exportFormat !== 'square' && (
+      {!isLandscape && isSpiral && exportFormat !== 'square' && (
         <p className="ep-photo-count" style={{ color: 'rgba(240,180,80,0.7)' }}>
           Spiral is designed for 1:1 square format
         </p>
       )}
-      {!isScape && isPhotoBooth && exportFormat === 'landscape' && (
+      {!isLandscape && isPhotoBooth && exportFormat === 'landscape' && (
         <p className="ep-photo-count" style={{ color: 'rgba(240,180,80,0.7)' }}>
           Best with Square or Portrait format
         </p>
@@ -64,16 +64,16 @@ export default function ExportPanel({
         <>
           <h3 className="ep-section">Composition</h3>
           <div className="ep-panel">
-            {!is2D && !isScape && (
+            {!is2D && !isLandscape && (
               <NumberField label="Count"  value={controls.count}  min={1}   max={100} step={1}    onChange={v => setCtrl('count', v)} />
             )}
-            {!is2D && !isScape && (
+            {!is2D && !isLandscape && (
               <NumberField label="Zoom"   value={controls.zoom}   min={0.4} max={3}   step={0.05} onChange={v => setCtrl('zoom', v)} />
             )}
-            {!is2D && !isScape && presetId !== 'flow' && (
+            {!is2D && !isLandscape && presetId !== 'flow' && (
               <NumberField label="Radius" value={controls.radius} min={0.3} max={3}   step={0.05} onChange={v => setCtrl('radius', v)} />
             )}
-            {!is2D && !isScape && (
+            {!is2D && !isLandscape && (
               <NumberField label="Scale"  value={controls.scale}  min={0.2} max={2}   step={0.05} onChange={v => setCtrl('scale', v)} />
             )}
             {!isMainStage && !isSpiral && (
@@ -91,7 +91,7 @@ export default function ExportPanel({
         </>
       )}
       {/* Video Length — non-scape only */}
-      {!isScape && (
+      {!isLandscape && (
         <>
           <h3 className="ep-section">Video Length</h3>
           <div className="ep-panel">

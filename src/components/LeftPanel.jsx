@@ -6,7 +6,7 @@ import '../styles/export.css'
 const MONO = '"IBM Plex Mono", monospace'
 
 const PRESETS = [
-  { key: 'scape',      label: 'Scape'       },
+  { key: 'landscape',  label: 'Landscape'   },
   { key: 'sphere',     label: 'Sphere'      },
   { key: 'ring',       label: 'Ring'        },
   { key: 'helix',      label: 'Helix'       },
@@ -27,7 +27,8 @@ export default function LeftPanel({
   exportFormat, onExportFormatChange,
   loopS, onLoopChange,
 }) {
-  const [isOpen, setIsOpen] = useState(() => window.innerWidth >= 1024)
+  const [isOpen,      setIsOpen]      = useState(() => window.innerWidth >= 1024)
+  const [presetOpen,  setPresetOpen]  = useState(false)
   const panelRef  = useRef(null)
   const toggleRef = useRef(null)
 
@@ -57,8 +58,19 @@ export default function LeftPanel({
     }
   }, [isOpen])
 
-  const isDark = theme === 'dark'
-  const text   = isDark ? '#f0ede4' : '#1a1a18'
+  const isDark       = theme === 'dark'
+  const text         = isDark ? '#f0ede4' : '#1a1a18'
+  const mutedText    = isDark ? 'rgba(240,237,228,0.5)' : 'rgba(26,26,24,0.45)'
+  const rowBg        = isDark ? 'rgba(255,255,255,0.055)' : 'rgba(0,0,0,0.045)'
+  const rowActiveBg  = isDark ? 'rgba(255,255,255,0.1)'  : 'rgba(0,0,0,0.09)'
+  const dividerColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
+
+  const currentLabel = PRESETS.find(p => p.key === presetId)?.label ?? presetId
+
+  function selectPreset(key) {
+    onPresetChange(key)
+    setPresetOpen(false)
+  }
 
   return (
     <>
@@ -76,7 +88,7 @@ export default function LeftPanel({
         ref={panelRef}
         className={`panel panel--left ${isOpen ? 'panel--visible' : 'panel--hidden'} panel--wide`}
       >
-        {/* Fixed header: Upload button + Preset dropdown */}
+        {/* Fixed header */}
         <div style={{ padding: '16px 16px 0', flexShrink: 0 }}>
 
           {/* Upload Photos */}
@@ -88,8 +100,7 @@ export default function LeftPanel({
               borderRadius: 10, border: 'none', cursor: 'pointer',
               background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
               color: text,
-              fontFamily: MONO, fontSize: 11, letterSpacing: '0.09em',
-              fontWeight: 500,
+              fontFamily: MONO, fontSize: 11, letterSpacing: '0.09em', fontWeight: 500,
               transition: 'background 0.15s',
             }}
           >
@@ -99,40 +110,70 @@ export default function LeftPanel({
               : 'UPLOAD PHOTOS'}
           </button>
 
-          {/* Preset dropdown */}
-          <div style={{ position: 'relative', marginBottom: 10 }}>
-            <select
-              value={presetId}
-              onChange={e => onPresetChange(e.target.value)}
+          {/* Custom preset selector */}
+          <div style={{ marginBottom: 10 }}>
+
+            {/* Trigger */}
+            <button
+              onClick={() => setPresetOpen(o => !o)}
               style={{
-                appearance: 'none',
-                background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)',
-                border: 'none',
-                borderRadius: 10,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                width: '100%', height: 50, padding: '0 14px 0 16px',
+                border: 'none', cursor: 'pointer',
+                background: rowBg,
+                borderRadius: presetOpen ? '10px 10px 0 0' : 10,
                 color: text,
-                cursor: 'pointer',
-                fontFamily: MONO,
-                fontSize: 12,
-                letterSpacing: '0.07em',
-                fontWeight: 500,
-                outline: 'none',
-                padding: '0 40px 0 16px',
-                width: '100%',
-                height: 50,
+                fontFamily: MONO, fontSize: 12, letterSpacing: '0.07em', fontWeight: 500,
+                transition: 'background 0.15s, border-radius 0.15s',
               }}
             >
-              {PRESETS.map(p => (
-                <option key={p.key} value={p.key} style={{ background: '#1a1812' }}>{p.label}</option>
-              ))}
-            </select>
-            <span style={{
-              pointerEvents: 'none', position: 'absolute', right: 14, top: '50%',
-              transform: 'translateY(-50%)',
-              color: isDark ? 'rgba(240,237,228,0.4)' : 'rgba(26,26,24,0.35)',
-              fontSize: 14,
-            }}>▾</span>
-          </div>
+              <span>{currentLabel}</span>
+              <i
+                className="ri-arrow-down-s-line"
+                style={{
+                  fontSize: 20, color: mutedText, flexShrink: 0,
+                  transition: 'transform 0.2s',
+                  transform: presetOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                }}
+              />
+            </button>
 
+            {/* Expandable list */}
+            {presetOpen && (
+              <div style={{
+                background: rowBg,
+                borderRadius: '0 0 10px 10px',
+                overflow: 'hidden',
+              }}>
+                {PRESETS.map((p, i) => {
+                  const isActive = p.key === presetId
+                  return (
+                    <button
+                      key={p.key}
+                      onClick={() => selectPreset(p.key)}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        width: '100%', height: 42, padding: '0 14px 0 16px',
+                        border: 'none', cursor: 'pointer',
+                        borderTop: `1px solid ${dividerColor}`,
+                        background: isActive ? rowActiveBg : 'transparent',
+                        color: isActive ? text : mutedText,
+                        fontFamily: MONO, fontSize: 11, letterSpacing: '0.06em',
+                        fontWeight: isActive ? 500 : 400,
+                        transition: 'background 0.1s',
+                      }}
+                    >
+                      <span>{p.label}</span>
+                      {isActive && (
+                        <i className="ri-check-line" style={{ fontSize: 14, flexShrink: 0 }} />
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
+          </div>
         </div>
 
         {/* Scrollable panel body */}
