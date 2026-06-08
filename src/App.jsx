@@ -331,6 +331,7 @@ export default function App() {
           bgColor={bgColor}               onBgChange={setBgColor}
           exportControls={exportControls} onExportControlsChange={setExportControls}
           exportFormat={exportFormat}     onExportFormatChange={setExportFormat}
+          loopS={loopS}                   onLoopChange={setLoopS}
         />
       )}
 

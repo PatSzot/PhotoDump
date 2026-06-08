@@ -1,5 +1,6 @@
 import NumberField from '../components/NumberField.jsx'
 import BgToggle from '../components/BgToggle.jsx'
+import LoopTimeline from '../components/LoopTimeline.jsx'
 import '../styles/export.css'
 
 function PhotoCount({ count }) {
@@ -15,6 +16,7 @@ export default function ExportPanel({
   controls, onControlsChange,
   photoCount = 0,
   exportFormat,
+  loopS, onLoopChange,
 }) {
   function setCtrl(key, val) {
     onControlsChange({ ...controls, [key]: val })
@@ -85,6 +87,16 @@ export default function ExportPanel({
               step={0.05}
               onChange={v => setCtrl('speed', v)}
             />
+          </div>
+        </>
+      )}
+      {/* Video Length — non-scape only */}
+      {!isScape && (
+        <>
+          <h3 className="ep-section">Video Length</h3>
+          <div className="ep-panel">
+            <NumberField label="Loop" value={loopS} min={1} max={24} step={0.1} onChange={onLoopChange} unit=" s" />
+            <LoopTimeline loopS={loopS} />
           </div>
         </>
       )}

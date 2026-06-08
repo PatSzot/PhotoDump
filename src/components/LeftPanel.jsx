@@ -25,6 +25,7 @@ export default function LeftPanel({
   bgColor, onBgChange,
   exportControls, onExportControlsChange,
   exportFormat, onExportFormatChange,
+  loopS, onLoopChange,
 }) {
   const [isOpen, setIsOpen] = useState(() => window.innerWidth >= 1024)
   const panelRef  = useRef(null)
@@ -144,6 +145,8 @@ export default function LeftPanel({
             onControlsChange={onExportControlsChange}
             photoCount={images.length}
             exportFormat={exportFormat}
+            loopS={loopS}
+            onLoopChange={onLoopChange}
           />
         </div>
       </aside>
