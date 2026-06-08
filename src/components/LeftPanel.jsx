@@ -68,9 +68,31 @@ export default function LeftPanel({
         ref={panelRef}
         className={`panel panel--left ${isOpen ? 'panel--visible' : 'panel--hidden'} panel--wide`}
       >
-        {/* Mode switcher — sticky, not scrollable */}
+        {/* Fixed header: Upload button + mode switcher */}
         <div style={{ padding: '16px 16px 0', flexShrink: 0 }}>
-          <div className="mode-switcher" style={{ margin: '0 0 12px' }}>
+
+          {/* Upload Photos — primary CTA at the very top */}
+          <button
+            onClick={onUploadClick}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              gap: 10, width: '100%', height: 50, marginBottom: 10,
+              borderRadius: 10, border: 'none', cursor: 'pointer',
+              background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+              color: text,
+              fontFamily: MONO, fontSize: 11, letterSpacing: '0.09em',
+              fontWeight: 500,
+              transition: 'background 0.15s',
+            }}
+          >
+            <i className="ri-upload-2-line" style={{ fontSize: 20, flexShrink: 0 }} />
+            {images.length > 0
+              ? `${images.length} PHOTO${images.length !== 1 ? 'S' : ''} · ADD MORE`
+              : 'UPLOAD PHOTOS'}
+          </button>
+
+          {/* Mode switcher */}
+          <div className="mode-switcher" style={{ margin: '0 0 4px' }}>
             {[
               { id: 'explore', icon: 'ri-compass-3-line', label: 'Explore' },
               { id: 'export',  icon: 'ri-film-line',      label: 'Export'  },
@@ -85,22 +107,6 @@ export default function LeftPanel({
               </button>
             ))}
           </div>
-
-          {/* Upload Photos button — pinned below mode tabs */}
-          <button
-            onClick={onUploadClick}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8, width: '100%',
-              padding: '7px 10px', marginBottom: 12, borderRadius: 5, border: 'none',
-              cursor: 'pointer', background: rowBg, color: muted,
-              fontFamily: MONO, fontSize: 10, letterSpacing: '0.07em',
-            }}
-          >
-            <i className="ri-upload-2-line" style={{ fontSize: 13, color: text }} />
-            {images.length > 0
-              ? `${images.length} PHOTO${images.length !== 1 ? 'S' : ''} — ADD MORE`
-              : 'UPLOAD PHOTOS'}
-          </button>
         </div>
 
         {/* Scrollable panel body — same content for both modes */}

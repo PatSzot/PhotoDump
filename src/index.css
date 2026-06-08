@@ -40,6 +40,7 @@ html, body {
   height: 100%;
   overflow: hidden;
   background: #F5F3EC;
+  font-family: 'IBM Plex Mono', monospace;
   -webkit-font-smoothing: antialiased;
   overscroll-behavior: none;
 }

@@ -1,15 +1,17 @@
 import { useEffect, useRef } from 'react'
 import { initScene } from '../scene/index.js'
 
-export default function LandscapeCanvas({ images, corner = 0, onSceneReady }) {
+export default function LandscapeCanvas({ images, corner = 0, bgColor = '#0d0d0d', onSceneReady }) {
   const containerRef = useRef(null)
   const sceneRef     = useRef(null)
   // Track latest values so we can apply them once async init finishes
   const imagesRef    = useRef(images)
   const cornerRef    = useRef(corner)
+  const bgColorRef   = useRef(bgColor)
 
   useEffect(() => { imagesRef.current = images }, [images])
   useEffect(() => { cornerRef.current = corner }, [corner])
+  useEffect(() => { bgColorRef.current = bgColor }, [bgColor])
 
   // ── Mount: init the scatter scene ─────────────────────────────────────────
   useEffect(() => {
@@ -20,6 +22,7 @@ export default function LandscapeCanvas({ images, corner = 0, onSceneReady }) {
       if (!mounted) { scene.cleanup(); return }
       sceneRef.current = scene
       onSceneReady?.(scene)
+      scene.setBgColor(bgColorRef.current)
       scene.setStyle({ corner: cornerRef.current })
       if (imagesRef.current?.length > 0) scene.updateTextures(imagesRef.current)
     })
@@ -38,6 +41,9 @@ export default function LandscapeCanvas({ images, corner = 0, onSceneReady }) {
     if (images?.length > 0) scene.updateTextures(images)
     else scene.reloadDefaults()
   }, [images])
+
+  // ── BgColor changed ────────────────────────────────────────────────────────
+  useEffect(() => { sceneRef.current?.setBgColor(bgColor) }, [bgColor])
 
   // ── Corner changed ─────────────────────────────────────────────────────────
   useEffect(() => {

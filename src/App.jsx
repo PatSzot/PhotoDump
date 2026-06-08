@@ -349,6 +349,7 @@ export default function App() {
             <LandscapeCanvas
               images={isExport ? exportImages : images}
               corner={corner}
+              bgColor={bgColor}
               onSceneReady={scene => { sceneRef.current = scene }}
             />
           </div>
