@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import exifr from 'exifr'
 import LandscapeCanvas from './components/LandscapeCanvas.jsx'
 import ShuffleCanvas from './components/ShuffleCanvas.jsx'
@@ -13,8 +14,10 @@ import ExportDock, { FORMATS } from './components/ExportDock.jsx'
 import ImageModal from './components/ImageModal.jsx'
 import { exportVideo } from './lib/exporter.js'
 import { PRESET_IDS, PRESET_DEFAULTS } from './lib/presets.js'
+import 'remixicon/fonts/remixicon.css'
 import './styles/layout.css'
 import './styles/export.css'
+import './styles/library.css'
 
 // ─── EXIF helper ──────────────────────────────────────────────────────────────
 
@@ -166,6 +169,20 @@ export default function App() {
         }
       })
       .catch(err => console.error('Failed to load shared scape:', err))
+  }, [])
+
+  // ── Pending library photos (from /library or /collections) ───────────────
+  useEffect(() => {
+    const raw = sessionStorage.getItem('pendingLibraryPhotos')
+    if (!raw) return
+    sessionStorage.removeItem('pendingLibraryPhotos')
+    try {
+      const urls = JSON.parse(raw)
+      if (!Array.isArray(urls) || urls.length === 0) return
+      const fresh = urls.map(url => ({ url, meta: {} }))
+      applyPool([...poolRef.current, ...fresh])
+    } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // ── Keyboard shortcuts ─────────────────────────────────────────────────────
@@ -323,6 +340,13 @@ export default function App() {
         }}
         style={{ position: 'fixed', top: -200, opacity: 0, width: 1, height: 1, pointerEvents: 'none' }}
       />
+
+      {!VIEW_MODE && (
+        <Link to="/library" className="creator-library-link">
+          <i className="ri-image-line" style={{ fontSize: 13 }} />
+          Library
+        </Link>
+      )}
 
       {!VIEW_MODE && (
         <LeftPanel
