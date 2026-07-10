@@ -1,7 +1,9 @@
 {
+  "rewrites": [
+    { "source": "/s/:id", "destination": "/api/s?id=:id" }
+  ],
   "functions": {
-    "api/share.js": {
-      "maxDuration": 60
-    }
+    "api/share.js": { "maxDuration": 60 },
+    "api/s.js":     { "maxDuration": 10 }
   }
 }

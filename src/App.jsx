@@ -45,6 +45,55 @@ async function readMeta(file) {
   }
 }
 
+// ─── OG image (1200×630 photo collage for share link previews) ───────────────
+
+function generateOgImage(dataUrls, bg = '#0e0c08') {
+  return new Promise(resolve => {
+    const W = 1200, H = 630
+    const canvas = document.createElement('canvas')
+    canvas.width = W; canvas.height = H
+    const ctx = canvas.getContext('2d')
+    ctx.fillStyle = bg
+    ctx.fillRect(0, 0, W, H)
+
+    const photos = dataUrls.filter(Boolean).slice(0, 4)
+    if (photos.length === 0) { resolve(null); return }
+
+    const GAP  = 4
+    const cols = photos.length <= 1 ? 1 : 2
+    const rows = photos.length <= 2 ? 1 : 2
+    const cw   = Math.floor((W - GAP * (cols + 1)) / cols)
+    const ch   = Math.floor((H - GAP * (rows + 1)) / rows)
+
+    let loaded = 0
+    photos.forEach((dataUrl, i) => {
+      const img = new Image()
+      img.onload = () => {
+        const col = i % cols
+        const row = Math.floor(i / cols)
+        // Center single photo on last row when there are 3 photos
+        const x = photos.length === 3 && row === 1
+          ? (W - cw) / 2
+          : GAP + col * (cw + GAP)
+        const y = GAP + row * (ch + GAP)
+
+        const scale = Math.max(cw / img.naturalWidth, ch / img.naturalHeight)
+        const sw = img.naturalWidth * scale, sh = img.naturalHeight * scale
+        const ox = (sw - cw) / 2,          oy = (sh - ch) / 2
+
+        ctx.save()
+        ctx.beginPath(); ctx.rect(x, y, cw, ch); ctx.clip()
+        ctx.drawImage(img, x - ox, y - oy, sw, sh)
+        ctx.restore()
+
+        if (++loaded === photos.length) resolve(canvas.toDataURL('image/jpeg', 0.9))
+      }
+      img.onerror = () => { if (++loaded === photos.length) resolve(canvas.toDataURL('image/jpeg', 0.9)) }
+      img.src = dataUrl
+    })
+  })
+}
+
 // ─── Image compression (for share uploads) ────────────────────────────────────
 
 function compressImageToDataUrl(url) {
@@ -248,43 +297,62 @@ export default function App() {
 
   // ── Share link (Scape) ─────────────────────────────────────────────────────
   async function handleCopyLink() {
-    // Generate a unique share ID client-side (avoids an extra round-trip)
     const id = crypto.randomUUID()
 
-    // Upload every image in its own request so we never hit Vercel's 4.5 MB
-    // serverless body limit (60 images × ~150 KB each = ~9 MB otherwise).
-    const images = await Promise.all(
-      poolRef.current.map(async ({ url, meta }, i) => {
-        const dataUrl = await compressImageToDataUrl(url)
-        const res = await fetch('/api/share?action=upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id, index: i, dataUrl, meta }),
-        })
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}))
-          throw new Error(err.error || `Image ${i + 1} upload failed (${res.status})`)
-        }
-        return res.json() // { url, meta }
+    async function uploadOne(index, dataUrl, meta) {
+      const res = await fetch('/api/share?action=upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, index, dataUrl, meta }),
       })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || `Upload failed (${res.status})`)
+      }
+      return res.json()
+    }
+
+    // Step 1 — compress all images
+    const compressed = await Promise.all(
+      poolRef.current.map(async ({ url, meta }, i) => ({
+        index: i,
+        dataUrl: await compressImageToDataUrl(url),
+        meta,
+      }))
     )
 
-    // Save the manifest — tiny JSON (just URLs + settings, no image data)
+    // Step 2 — generate OG collage from first 4 compressed photos
+    const ogDataUrl = await generateOgImage(
+      compressed.slice(0, 4).map(c => c.dataUrl),
+      bgColor
+    ).catch(() => null)
+
+    // Step 3 — upload photos + OG image in parallel
+    const uploadTasks = compressed.map(({ index, dataUrl, meta }) => uploadOne(index, dataUrl, meta))
+    const ogTask = ogDataUrl
+      ? uploadOne('og', ogDataUrl, {}).catch(() => null)
+      : Promise.resolve(null)
+
+    const [photoResults, ogResult] = await Promise.all([Promise.all(uploadTasks), ogTask])
+
+    // Step 4 — save manifest (tiny: just URLs + settings, no image data)
+    const settings = {
+      bgColor,
+      corners: exportControls.corners ?? 0,
+      ...(ogResult?.url && { ogImage: ogResult.url }),
+    }
     const manifestRes = await fetch('/api/share?action=manifest', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id,
-        images,
-        settings: { bgColor, corners: exportControls.corners ?? 0 },
-      }),
+      body: JSON.stringify({ id, images: photoResults, settings }),
     })
     if (!manifestRes.ok) {
       const err = await manifestRes.json().catch(() => ({}))
       throw new Error(err.error || `Manifest failed (${manifestRes.status})`)
     }
 
-    return `${window.location.origin}/?view&s=${id}`
+    // /s/<id> serves OG meta tags for crawlers then redirects to the SPA
+    return `${window.location.origin}/s/${id}`
   }
 
   // ── Preset switch ──────────────────────────────────────────────────────────
