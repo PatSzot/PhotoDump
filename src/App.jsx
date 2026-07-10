@@ -45,7 +45,7 @@ async function readMeta(file) {
   }
 }
 
-// ─── OG image (1200×630 photo collage for share link previews) ───────────────
+// ─── OG image (1200×630 scattered scape view for share link previews) ────────
 
 function generateOgImage(dataUrls, bg = '#0e0c08') {
   return new Promise(resolve => {
@@ -56,41 +56,75 @@ function generateOgImage(dataUrls, bg = '#0e0c08') {
     ctx.fillStyle = bg
     ctx.fillRect(0, 0, W, H)
 
-    const photos = dataUrls.filter(Boolean).slice(0, 4)
+    const photos = dataUrls.filter(Boolean).slice(0, 15)
     if (photos.length === 0) { resolve(null); return }
 
-    const GAP  = 4
-    const cols = photos.length <= 1 ? 1 : 2
-    const rows = photos.length <= 2 ? 1 : 2
-    const cw   = Math.floor((W - GAP * (cols + 1)) / cols)
-    const ch   = Math.floor((H - GAP * (rows + 1)) / rows)
+    // Deterministic hash so layout is stable across renders
+    const rng = s => {
+      s = Math.imul(s ^ 0x9e3779b9, 0x45d9f3b)
+      s = Math.imul(s ^ (s >>> 16), 0x45d9f3b)
+      return ((s ^ (s >>> 16)) >>> 0) / 0xffffffff
+    }
+
+    const n = photos.length
+    // Grid + jitter: ensures even spread across the full canvas
+    const cols = Math.ceil(Math.sqrt(n * W / H))
+    const rows = Math.ceil(n / cols)
+    const cellW = W / cols
+    const cellH = H / rows
+
+    const layout = photos.map((_, i) => {
+      const col = i % cols
+      const row = Math.floor(i / cols)
+      const cx  = (col + 0.5) * cellW + (rng(i * 3 + 1) - 0.5) * cellW * 0.55
+      const cy  = (row + 0.5) * cellH + (rng(i * 3 + 2) - 0.5) * cellH * 0.55
+      const sz  = (170 + rng(i * 3 + 3) * 70) * (0.85 + rng(i * 5 + 4) * 0.15)
+      const rot = (rng(i * 7 + 5) - 0.5) * 26 * Math.PI / 180   // ±13°
+      return { cx, cy, sz, rot }
+    })
 
     let loaded = 0
+    const imgs = new Array(n)
     photos.forEach((dataUrl, i) => {
       const img = new Image()
-      img.onload = () => {
-        const col = i % cols
-        const row = Math.floor(i / cols)
-        // Center single photo on last row when there are 3 photos
-        const x = photos.length === 3 && row === 1
-          ? (W - cw) / 2
-          : GAP + col * (cw + GAP)
-        const y = GAP + row * (ch + GAP)
-
-        const scale = Math.max(cw / img.naturalWidth, ch / img.naturalHeight)
-        const sw = img.naturalWidth * scale, sh = img.naturalHeight * scale
-        const ox = (sw - cw) / 2,          oy = (sh - ch) / 2
-
-        ctx.save()
-        ctx.beginPath(); ctx.rect(x, y, cw, ch); ctx.clip()
-        ctx.drawImage(img, x - ox, y - oy, sw, sh)
-        ctx.restore()
-
-        if (++loaded === photos.length) resolve(canvas.toDataURL('image/jpeg', 0.9))
-      }
-      img.onerror = () => { if (++loaded === photos.length) resolve(canvas.toDataURL('image/jpeg', 0.9)) }
+      img.onload  = () => { imgs[i] = img;  if (++loaded === n) draw() }
+      img.onerror = () => { imgs[i] = null; if (++loaded === n) draw() }
       img.src = dataUrl
     })
+
+    function rrect(x, y, w, h, r) {
+      ctx.beginPath()
+      ctx.moveTo(x + r, y)
+      ctx.lineTo(x + w - r, y)
+      ctx.arcTo(x + w, y,     x + w, y + r,     r)
+      ctx.lineTo(x + w, y + h - r)
+      ctx.arcTo(x + w, y + h, x + w - r, y + h, r)
+      ctx.lineTo(x + r, y + h)
+      ctx.arcTo(x, y + h,     x, y + h - r,     r)
+      ctx.lineTo(x, y + r)
+      ctx.arcTo(x, y,         x + r, y,          r)
+      ctx.closePath()
+    }
+
+    function draw() {
+      // Draw back-to-front so earlier photos (index 0) land on top
+      for (let i = n - 1; i >= 0; i--) {
+        const img = imgs[i]
+        if (!img) continue
+        const { cx, cy, sz, rot } = layout[i]
+        const aspect = img.naturalWidth / img.naturalHeight
+        const bw = aspect >= 1 ? sz : sz * aspect
+        const bh = aspect >= 1 ? sz / aspect : sz
+        ctx.save()
+        ctx.translate(cx, cy)
+        ctx.rotate(rot)
+        rrect(-bw / 2, -bh / 2, bw, bh, 8)
+        ctx.clip()
+        ctx.drawImage(img, -bw / 2, -bh / 2, bw, bh)
+        ctx.restore()
+      }
+      resolve(canvas.toDataURL('image/jpeg', 0.9))
+    }
   })
 }
 
@@ -323,7 +357,7 @@ export default function App() {
 
     // Step 2 — generate OG collage from first 4 compressed photos
     const ogDataUrl = await generateOgImage(
-      compressed.slice(0, 4).map(c => c.dataUrl),
+      compressed.slice(0, 15).map(c => c.dataUrl),
       bgColor
     ).catch(() => null)
 
