@@ -47,7 +47,7 @@ async function readMeta(file) {
 
 // ─── OG image (1200×630 scattered scape view for share link previews) ────────
 
-function generateOgImage(dataUrls, bg = '#0e0c08') {
+function generateOgImage(dataUrls, bg = '#0e0c08', corner = 0) {
   return new Promise(resolve => {
     const W = 1200, H = 630
     const canvas = document.createElement('canvas')
@@ -67,20 +67,20 @@ function generateOgImage(dataUrls, bg = '#0e0c08') {
     }
 
     const n = photos.length
-    // Grid + jitter: ensures even spread across the full canvas
+    // Expand canvas bounds so photos can scatter beyond edges (like the scape)
+    const OX = W * 0.15, OY = H * 0.15
     const cols = Math.ceil(Math.sqrt(n * W / H))
     const rows = Math.ceil(n / cols)
-    const cellW = W / cols
-    const cellH = H / rows
+    const cellW = (W + OX * 2) / cols
+    const cellH = (H + OY * 2) / rows
 
     const layout = photos.map((_, i) => {
       const col = i % cols
       const row = Math.floor(i / cols)
-      const cx  = (col + 0.5) * cellW + (rng(i * 3 + 1) - 0.5) * cellW * 0.55
-      const cy  = (row + 0.5) * cellH + (rng(i * 3 + 2) - 0.5) * cellH * 0.55
-      const sz  = (170 + rng(i * 3 + 3) * 70) * (0.85 + rng(i * 5 + 4) * 0.15)
-      const rot = (rng(i * 7 + 5) - 0.5) * 26 * Math.PI / 180   // ±13°
-      return { cx, cy, sz, rot }
+      const cx  = -OX + (col + 0.5) * cellW + (rng(i * 3 + 1) - 0.5) * cellW * 0.85
+      const cy  = -OY + (row + 0.5) * cellH + (rng(i * 3 + 2) - 0.5) * cellH * 0.85
+      const sz  = 80 + rng(i * 3 + 3) * 170   // 80–250px
+      return { cx, cy, sz }
     })
 
     let loaded = 0
@@ -93,6 +93,7 @@ function generateOgImage(dataUrls, bg = '#0e0c08') {
     })
 
     function rrect(x, y, w, h, r) {
+      if (r <= 0) { ctx.beginPath(); ctx.rect(x, y, w, h); return }
       ctx.beginPath()
       ctx.moveTo(x + r, y)
       ctx.lineTo(x + w - r, y)
@@ -111,14 +112,15 @@ function generateOgImage(dataUrls, bg = '#0e0c08') {
       for (let i = n - 1; i >= 0; i--) {
         const img = imgs[i]
         if (!img) continue
-        const { cx, cy, sz, rot } = layout[i]
+        const { cx, cy, sz } = layout[i]
         const aspect = img.naturalWidth / img.naturalHeight
         const bw = aspect >= 1 ? sz : sz * aspect
         const bh = aspect >= 1 ? sz / aspect : sz
+        // Corner radius matches the scene's style.corner proportion
+        const r = Math.round(Math.min(bw, bh) * corner)
         ctx.save()
         ctx.translate(cx, cy)
-        ctx.rotate(rot)
-        rrect(-bw / 2, -bh / 2, bw, bh, 8)
+        rrect(-bw / 2, -bh / 2, bw, bh, r)
         ctx.clip()
         ctx.drawImage(img, -bw / 2, -bh / 2, bw, bh)
         ctx.restore()
@@ -358,7 +360,8 @@ export default function App() {
     // Step 2 — generate OG collage from first 4 compressed photos
     const ogDataUrl = await generateOgImage(
       compressed.slice(0, 15).map(c => c.dataUrl),
-      bgColor
+      bgColor,
+      exportControls.corners ?? 0
     ).catch(() => null)
 
     // Step 3 — upload photos + OG image in parallel
