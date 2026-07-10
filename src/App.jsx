@@ -50,15 +50,23 @@ async function readMeta(file) {
 function compressImageToDataUrl(url) {
   return new Promise((resolve, reject) => {
     const img = new Image()
+    // HTTPS URLs (e.g. Vercel Blob library photos) need crossOrigin to avoid
+    // tainting the canvas; blob: URLs are same-origin so crossOrigin is omitted
+    // (setting it on blob: URLs breaks iOS Safari).
+    if (!url.startsWith('blob:')) img.crossOrigin = 'anonymous'
     img.onload = () => {
-      const MAX = 1024
-      const scale = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight, 1))
-      const w = Math.max(1, Math.round(img.naturalWidth  * scale))
-      const h = Math.max(1, Math.round(img.naturalHeight * scale))
-      const canvas = document.createElement('canvas')
-      canvas.width = w; canvas.height = h
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h)
-      resolve(canvas.toDataURL('image/jpeg', 0.85))
+      try {
+        const MAX = 1024
+        const scale = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight, 1))
+        const w = Math.max(1, Math.round(img.naturalWidth  * scale))
+        const h = Math.max(1, Math.round(img.naturalHeight * scale))
+        const canvas = document.createElement('canvas')
+        canvas.width = w; canvas.height = h
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+        resolve(canvas.toDataURL('image/jpeg', 0.85))
+      } catch (err) {
+        reject(err)
+      }
     }
     img.onerror = reject
     img.src = url
