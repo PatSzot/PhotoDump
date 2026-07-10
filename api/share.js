@@ -57,14 +57,14 @@ export default async function handler(req, res) {
         const ext  = mime.includes('jpeg') || mime.includes('jpg') ? 'jpg' : 'png'
         const buf  = Buffer.from(b64, 'base64')
         const blob = await put(`shares/${id}/${i}.${ext}`, buf, {
-          access: 'public', contentType: mime,
+          access: 'public', contentType: mime, addRandomSuffix: false,
         })
         return { url: blob.url, meta: meta ?? {} }
       })
     )
 
     await put(`shares/${id}.json`, JSON.stringify({ images, settings }), {
-      access: 'public', contentType: 'application/json',
+      access: 'public', contentType: 'application/json', addRandomSuffix: false,
     })
 
     return res.status(200).json({ id })

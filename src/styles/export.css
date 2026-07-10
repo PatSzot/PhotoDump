@@ -437,6 +437,8 @@
 .ep-cta--share { gap: 10px; justify-content: center; letter-spacing: 0.04em; }
 .ep-cta--success { background: rgba(80,200,120,0.18); color: rgba(160,240,180,0.95); }
 .ep-cta--success:hover { background: rgba(80,200,120,0.24); }
+.ep-cta--fail { background: rgba(220,60,60,0.18); color: rgba(255,160,160,0.95); }
+.ep-cta--fail:hover { background: rgba(220,60,60,0.24); }
 .ep-cta-label { pointer-events: none; }
 
 /* ─── Image Modal ──────────────────────────────────────────────────────────── */
