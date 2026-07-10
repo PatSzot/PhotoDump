@@ -86,7 +86,8 @@ async function loadAsTexture(url, meta = {}, corner = 0) {
   await document.fonts.ready
   return new Promise(resolve => {
     const img = new Image()
-    img.crossOrigin = 'anonymous'
+    // blob: URLs are same-origin — crossOrigin breaks canvas on iOS Safari
+    if (!url.startsWith('blob:')) img.crossOrigin = 'anonymous'
     img.onload = () => {
       const MAX   = 1024
       const scale = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight, 1))
@@ -163,6 +164,10 @@ export async function initScene(container) {
   // ─── Style state ─────────────────────────────────────────────────────────
   // corner: proportion of shorter side used as border-radius in canvas (0 = none)
   const style = { corner: 0.0 }
+
+  // Generation counter: incremented on every updateTextures/reloadDefaults call
+  // so stale async completions self-abort and never overwrite newer results.
+  let _gen = 0
 
   // ─── Load MYSCAPE assets in order ────────────────────────────────────────
   const assets = await Promise.all(LETTERS.map(url => loadSvg(url, style.corner)))
@@ -273,6 +278,8 @@ export async function initScene(container) {
   // ─── updateTextures — one container per image, no repeats ────────────────
 
   function updateTextures(images, onProgress) {
+    const gen = ++_gen
+
     // Grow the scape to fit all images
     while (particles.length < images.length) spawnParticle()
 
@@ -287,7 +294,9 @@ export async function initScene(container) {
       gsap.to(mesh.material.uniforms.uOpacity, {
         value: 0, duration: 0.18, delay,
         onComplete() {
+          if (gen !== _gen) return   // superseded by a newer call
           loadAsTexture(url, meta, style.corner).then(result => {
+            if (gen !== _gen) return // superseded while loading
             if (result) {
               const { tex, aspect } = result
               mesh.material.uniforms.uTexture.value = tex
@@ -338,7 +347,9 @@ export async function initScene(container) {
       if (corner !== undefined) style.corner = corner
     },
     async reloadDefaults() {
+      const gen = ++_gen
       const fresh = await Promise.all(LETTERS.map(url => loadSvg(url, style.corner)))
+      if (gen !== _gen) return  // superseded by updateTextures or another reloadDefaults
       fresh.forEach((asset, i) => {
         if (!asset || i >= particles.length) return
         const mesh = particles[i]
@@ -346,6 +357,7 @@ export async function initScene(container) {
         const base = mesh.userData.baseSize
         mesh.material.uniforms.uSizeX.value = asset.aspect >= 1 ? base : base * asset.aspect
         mesh.material.uniforms.uSizeY.value = asset.aspect >= 1 ? base / asset.aspect : base
+        gsap.to(mesh.material.uniforms.uOpacity, { value: 1, duration: 0.3 })
       })
     },
     getCanvas()       { return renderer.domElement },
