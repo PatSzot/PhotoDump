@@ -248,25 +248,42 @@ export default function App() {
 
   // ── Share link (Scape) ─────────────────────────────────────────────────────
   async function handleCopyLink() {
-    const entries = await Promise.all(
-      poolRef.current.map(async ({ url, meta }) => ({
-        dataUrl: await compressImageToDataUrl(url),
-        meta,
-      }))
+    // Generate a unique share ID client-side (avoids an extra round-trip)
+    const id = crypto.randomUUID()
+
+    // Upload every image in its own request so we never hit Vercel's 4.5 MB
+    // serverless body limit (60 images × ~150 KB each = ~9 MB otherwise).
+    const images = await Promise.all(
+      poolRef.current.map(async ({ url, meta }, i) => {
+        const dataUrl = await compressImageToDataUrl(url)
+        const res = await fetch('/api/share?action=upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, index: i, dataUrl, meta }),
+        })
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}))
+          throw new Error(err.error || `Image ${i + 1} upload failed (${res.status})`)
+        }
+        return res.json() // { url, meta }
+      })
     )
-    const res = await fetch('/api/share', {
+
+    // Save the manifest — tiny JSON (just URLs + settings, no image data)
+    const manifestRes = await fetch('/api/share?action=manifest', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        entries,
+        id,
+        images,
         settings: { bgColor, corners: exportControls.corners ?? 0 },
       }),
     })
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}))
-      throw new Error(err.error || `Upload failed (${res.status})`)
+    if (!manifestRes.ok) {
+      const err = await manifestRes.json().catch(() => ({}))
+      throw new Error(err.error || `Manifest failed (${manifestRes.status})`)
     }
-    const { id } = await res.json()
+
     return `${window.location.origin}/?view&s=${id}`
   }
 
